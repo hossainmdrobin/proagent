@@ -22,12 +22,12 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      return Response.json(
-        { error: "Missing model API configuration" },
-        { status: 500 },
-      );
-    }
+    // if (!process.env.OPENAI_API_KEY) {
+    //   return Response.json(
+    //     { error: "Missing model API configuration" },
+    //     { status: 500 },
+    //   );
+    // }
 
     sandbox = await createSandbox();
 
