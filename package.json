@@ -17,6 +17,7 @@
     "@types/nodemailer": "^8.0.2",
     "@vercel/sandbox": "^3.6.1",
     "bcrypt": "^6.0.0",
+    "clsx": "^2.1.1",
     "deepagents": "^1.14.2",
     "langchain": "^1.5.16",
     "mongoose": "^9.10.4",
