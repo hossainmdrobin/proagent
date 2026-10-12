@@ -3,6 +3,7 @@ import "server-only";
 import mongoose, { Schema, Types } from "mongoose";
 
 export interface ProjectRecord {
+  _id?:Types.ObjectId;
   ownerId: Types.ObjectId;
   name: string;
   framework: string;

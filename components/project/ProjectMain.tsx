@@ -28,8 +28,7 @@ export function ProjectMain({
   return (
     // /*[calc(100vh-5.5rem)]*/
     <main className="glass-main">
-      <div className="min-h-screen flex flex-col">   
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mx-4 h-12">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -62,7 +61,7 @@ export function ProjectMain({
           </div>
         </div>
 
-        <div className="flex-1 h-[calc(100vh-5.5rem)] overflow-hidden border border-glass-border bg-zinc-950/50 relative">
+        <div className="flex-1 h-[calc(100vh-3.1rem)] overflow-hidden border border-glass-border bg-zinc-950/50 relative">
           {viewMode === "preview" ? (
             <div className="w-full h-full flex items-center justify-center">
               <iframe
@@ -94,7 +93,6 @@ export function ProjectMain({
             </div>
           )}
         </div>
-      </div>
     </main>
   );
 }

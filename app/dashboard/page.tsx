@@ -19,8 +19,12 @@ import {
   mockTeam,
   mockNotifications,
 } from '@/lib/dashboard/mock-data';
+import { useGetProjectsQuery } from '@/store/features/projects-api';
 
 export default function DashboardPage() {
+  const {data, isLoading} = useGetProjectsQuery()
+  console.log(data, "The project list");
+  console.log()
   return (
     <WorkspaceLayout
       header={
@@ -47,7 +51,7 @@ export default function DashboardPage() {
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
             <ActivityFeed activities={mockActivity} limit={5} />
-            <ProjectGrid projects={mockProjects} limit={4} />
+            <ProjectGrid  />
           </div>
           <div className="space-y-6">
             <TeamMembers members={mockTeam} limit={5} />

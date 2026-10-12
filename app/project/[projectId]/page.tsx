@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { ProjectHeader } from "@/components/project/ProjectHeader";
 import { ProjectSidebar } from "@/components/project/ProjectSidebar";
 import { ProjectMain } from "@/components/project/ProjectMain";
 import { DEFAULT_PROJECT_FILES } from "@/components/project/utils";
@@ -50,13 +49,6 @@ export default function ProjectPage({ params }: { params: Promise<{ projectId: s
 
   return (
     <div className="min-h-screen bg-background">
-      {/* <ProjectHeader
-        projectId={projectId}
-        viewMode={viewMode}
-        isSidebarOpen={isSidebarOpen}
-        onToggleSidebar={toggleSidebar}
-        onToggleViewMode={toggleViewMode}
-      /> */}
 
       <ProjectSidebar
         isOpen={isSidebarOpen}
