@@ -1,0 +1,46 @@
+{
+  "entryPoints": ["lib", "app", "components", "store", "types"],
+  "entryPointStrategy": "expand",
+  "out": "docs/api",
+  "plugin": ["typedoc-plugin-markdown"],
+  "readme": "README.md",
+  "name": "SaadAgent",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "excludeExternals": true,
+  "categorizeByGroup": false,
+  "defaultCategory": "Other",
+  "categoryOrder": [
+    "Authentication",
+    "Database",
+    "API",
+    "Components",
+    "Utilities",
+    "Types",
+    "Other"
+  ],
+  "groupOrder": [
+    "Authentication",
+    "Database",
+    "API",
+    "Components",
+    "Utilities",
+    "Types",
+    "Other"
+  ],
+  "sort": ["source-order"],
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true,
+    "includeFolders": false
+  },
+  "githubPages": false,
+  "cleanOutputDir": true,
+  "validation": {
+    "invalidLink": true,
+    "notExported": true
+  },
+  "tsconfig": "tsconfig.json"
+}

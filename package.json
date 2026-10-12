@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "docs": "typedoc",
+    "docs:watch": "typedoc --watch"
   },
   "dependencies": {
     "@langchain/openai": "^1.6.2",
@@ -36,6 +38,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
     "tailwindcss": "^4",
+    "typedoc": "^0.28.20",
+    "typedoc-plugin-markdown": "^4.13.1",
     "typescript": "^5"
   }
 }

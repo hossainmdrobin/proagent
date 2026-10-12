@@ -10,7 +10,6 @@ const ROOT = "/vercel/sandbox/project";
 
 function safePath(path: string) {
     const normalized = path.replace(/\\/g, "/");
-
     if (
         normalized.startsWith("/") ||
         normalized.split("/").some(
