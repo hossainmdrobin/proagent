@@ -147,7 +147,7 @@ export async function saveWorkspace({
         },
         $inc: { version: 1 },
       },
-      { new: true },
+      { returnDocument: 'after' },
     ).lean();
 
     if (!updatedProject) {

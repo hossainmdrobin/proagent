@@ -8,7 +8,6 @@ import {
     persistSandboxWorkspace,
     restoreSandboxWorkspace,
 } from "@/lib/workspace/sandbox-workspace";
-import { getCurrentUser } from "@/lib/auth/session";
 
 export const runtime = "nodejs";
 
