@@ -192,3 +192,17 @@ export async function requireSession(): Promise<SessionContext> {
 
   return session;
 }
+
+export async function requireUser(): Promise<PublicUser> {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  return user;
+}
+
+export async function getOptionalUser(): Promise<PublicUser | null> {
+  return getCurrentUser();
+}
