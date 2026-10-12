@@ -10,7 +10,6 @@ const ROOT = "/vercel/sandbox/project";
 
 function safePath(path: string) {
     const normalized = path.replace(/\\/g, "/");
-
     if (
         normalized.startsWith("/") ||
         normalized.split("/").some(
@@ -112,9 +111,13 @@ export function createProjectAgent(sandbox: Sandbox) {
 
     return createDeepAgent({
         model: new ChatOpenAI({
-            model: "gpt-4.1-mini",
+            model: "gc/grok-4.7",
             temperature: 0,
-            maxTokens: 4096,
+            apiKey: process.env.OMNIROUTE_API_KEY,
+            maxTokens: 1024,
+            configuration: {
+                baseURL: process.env.OMNIROUTE_BASE_URL?.trim(),
+            },
         }),
         tools: [writeFile, readFile, listFiles, runCommand],
         systemPrompt: `
