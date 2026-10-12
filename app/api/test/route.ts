@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     // ownerId must come from your server-side authentication.
     const project = await createProject({
         ownerId,
-        name: "Project" + Math.random(),
+        name: ("Project" + Math.random()*1000).slice(0,10),
     });
 
     const firstSandbox = await createSandbox();
