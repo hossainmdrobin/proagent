@@ -12,12 +12,14 @@ interface ProjectSidebarProps {
   projectFiles: ProjectFile[];
   selectedFile: ProjectFile | null;
   onSelectFile: (file: ProjectFile) => void;
+  projectId:string;
 }
 
 export function ProjectSidebar({
   isOpen,
   messages,
   onSendMessage,
+  projectId,
   projectFiles,
   selectedFile,
   onSelectFile,
@@ -28,7 +30,7 @@ export function ProjectSidebar({
       isOpen ? "open" : ""
     )}>
       <div className="flex-1 overflow-y-auto scrollbar-thin flex flex-col">
-        <ChatInterface messages={messages} onSendMessage={onSendMessage} />
+        <ChatInterface projectId={projectId} messages={messages} onSendMessage={onSendMessage} />
       </div>
       
     </aside>

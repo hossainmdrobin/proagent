@@ -6,15 +6,24 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
 import { MessageBubble } from "./MessageBubble";
 import type { Message } from "./types";
+import { useRunAgentMutation } from "@/store/features/projects-api";
+import { useAgentStream } from "@/lib/hooks/use-agent-stream";
 
 interface ChatInterfaceProps {
   messages: Message[];
   onSendMessage: (content: string) => void;
+  projectId: string
 }
 
-export function ChatInterface({ messages, onSendMessage }: ChatInterfaceProps) {
+export function ChatInterface({ projectId, messages, onSendMessage }: ChatInterfaceProps) {
   const [chatInput, setChatInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // const [runAgent, { data, isLoading, }] = useRunAgentMutation()
+  // console.log("PLEASE PUT YOUR HAND :", data);
+  const { runAgentStream, events, loading, error } = useAgentStream();
+  console.log(events, loading, error);
+
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -22,6 +31,8 @@ export function ChatInterface({ messages, onSendMessage }: ChatInterfaceProps) {
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
+    runAgentStream(projectId, chatInput)
+
     onSendMessage(chatInput);
     setChatInput("");
   };
@@ -58,14 +69,14 @@ export function ChatInterface({ messages, onSendMessage }: ChatInterfaceProps) {
           aria-label="Chat input"
         />
         <Button
-        className="absolute right-1 "
+          className="absolute right-1 "
           variant="primary"
           size="icon"
           onClick={handleSendMessage}
           disabled={!chatInput.trim()}
           aria-label="Send message"
         >
-          <svg  className="size-5 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="size-5 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
           </svg>
         </Button>

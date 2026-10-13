@@ -5,9 +5,12 @@ import { ProjectSidebar } from "@/components/project/ProjectSidebar";
 import { ProjectMain } from "@/components/project/ProjectMain";
 import { DEFAULT_PROJECT_FILES } from "@/components/project/utils";
 import type { Message, ProjectFile, ViewMode } from "@/components/project/types";
+import { useParams } from "next/navigation";
 
-export default function ProjectPage({ params }: { params: Promise<{ projectId: string }> }) {
-  const [projectId] = useState("");
+export default function ProjectPage() {
+  const params = useParams();
+  const { projectId } = params || "";
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("preview");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -57,6 +60,7 @@ export default function ProjectPage({ params }: { params: Promise<{ projectId: s
         projectFiles={projectFiles}
         selectedFile={selectedFile}
         onSelectFile={handleSelectFile}
+        projectId={String(projectId)}
       />
 
       <ProjectMain
@@ -69,7 +73,7 @@ export default function ProjectPage({ params }: { params: Promise<{ projectId: s
         onSelectFile={handleSelectFile}
       />
 
-      {isSidebarOpen && window.innerWidth < 1024 && (
+      {isSidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={toggleSidebar}

@@ -8,20 +8,49 @@ import type { Sandbox } from "@vercel/sandbox";
 
 const ROOT = "/vercel/sandbox/project";
 
-function safePath(path: string) {
-    const normalized = path.replace(/\\/g, "/");
+
+import path from "node:path";
+
+
+function safePath(input: string): string {
+    const value = input.trim();
+
+    // An empty path or "." means the project root.
+    if (!value || value === ".") {
+        return ROOT;
+    }
+
+    // Accept both Windows and Unix separators, but reject
+    // absolute paths and Windows drive paths.
     if (
-        normalized.startsWith("/") ||
-        normalized.split("/").some(
-            (part) => part === ".." || part === ".",
-        ) ||
-        normalized.includes("\0")
+        value.includes("\0") ||
+        path.posix.isAbsolute(value) ||
+        path.win32.isAbsolute(value)
     ) {
         throw new Error("Invalid project path");
     }
 
-    return `${ROOT}/${normalized}`;
+    const normalized = value.replace(/\\/g, "/");
+    const segments = normalized.split("/");
+
+    if (segments.some((segment) => segment === "..")) {
+        throw new Error("Invalid project path");
+    }
+
+    const resolved = path.posix.resolve(ROOT, normalized);
+    const relative = path.posix.relative(ROOT, resolved);
+
+    if (
+        relative === ".." ||
+        relative.startsWith("../") ||
+        path.posix.isAbsolute(relative)
+    ) {
+        throw new Error("Invalid project path");
+    }
+
+    return resolved;
 }
+
 
 export function createProjectAgent(sandbox: Sandbox) {
     const writeFile = tool(
@@ -77,7 +106,11 @@ export function createProjectAgent(sandbox: Sandbox) {
         },
         {
             name: "list_project_files",
-            description: "List files and directories in the project.",
+            description:
+                "List files and directories inside the project. " +
+                'Use "." to list the project root. ' +
+                "Paths must be relative to the project root, such as " +
+                '"src" or "src/app". Never use absolute paths.',
             schema: z.object({
                 path: z.string().default("."),
             }),
