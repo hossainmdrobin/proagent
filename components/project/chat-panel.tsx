@@ -44,27 +44,7 @@ function EventBadge({ type }: { type: string }) {
 
 export function ChatPanel({ events }: { events: AgentEvent[] }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--agent-border)] bg-[var(--agent-bg-elevated)] shadow-[var(--agent-shadow)]">
-      <div className="flex items-center justify-between border-b border-[var(--agent-border)] px-1 py-3">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-[var(--agent-text)]">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-          Agent Chat
-        </h2>
-        <span className="rounded-full bg-[var(--agent-bg-sunken)] px-2 py-0.5 text-xs text-[var(--agent-text-dim)]">
-          {events.length} events
-        </span>
-      </div>
+    <div className="overflow-hidden rounded-xl pb-20 mb-20">
 
       <div className="max-h-[560px] space-y-3 overflow-auto p-1">
         {events.length === 0 ? (

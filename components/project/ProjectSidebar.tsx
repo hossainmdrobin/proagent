@@ -26,13 +26,10 @@ export function ProjectSidebar({
 }: ProjectSidebarProps) {
   return (
     <aside className={cn(
-      "glass-sidebar z-50 flex flex-col overflow-hidden w-1/4",
+      "glass-sidebar z-50 fixed w-1/4 h-screen",
       isOpen ? "open" : ""
     )}>
-      <div className="flex-1 overflow-y-auto scrollbar-thin flex flex-col">
-        <ChatInterface projectId={projectId} messages={messages} onSendMessage={onSendMessage} />
-      </div>
-      
+        <ChatInterface projectId={projectId} messages={messages} onSendMessage={onSendMessage} />      
     </aside>
   );
 }
