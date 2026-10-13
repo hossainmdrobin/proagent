@@ -46,7 +46,7 @@ export function ChatPanel({ events }: { events: AgentEvent[] }) {
   return (
     <div className="overflow-hidden rounded-xl pb-20 mb-20">
 
-      <div className="max-h-[560px] space-y-3 overflow-auto p-1">
+      <div className="space-y-3 overflow-auto p-1">
         {events.length === 0 ? (
           <div className="py-8 text-center">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--agent-bg-sunken)]">

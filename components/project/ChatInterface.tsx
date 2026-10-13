@@ -2,11 +2,7 @@
 
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/cn";
-import { MessageBubble } from "./MessageBubble";
 import type { Message } from "./types";
-import { useRunAgentMutation } from "@/store/features/projects-api";
 import { useAgentStream } from "@/lib/hooks/use-agent-stream";
 import { ChatPanel } from "./chat-panel";
 
@@ -48,9 +44,8 @@ export function ChatInterface({ projectId, messages, onSendMessage }: ChatInterf
   return (
     <div className="h-screen relative">
       <h2 className="text-lg font-semibold h-12 bg-green-400">Chat</h2>
-      <div className="flex-1 h-[calc(100vh-3rem)] overflow-y-scrol">
+      <div className="h-[calc(100vh-3rem)] overflow-y-auto srollbar-none">
         <ChatPanel events={events} />
-        <div ref={messagesEndRef} />
       </div>
       <div className="absolute left-0 right-0 bottom-0 h-20 bg-gradient-to-t from-green-500 to-transparent">
         <textarea
