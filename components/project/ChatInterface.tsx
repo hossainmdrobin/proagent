@@ -8,6 +8,7 @@ import { MessageBubble } from "./MessageBubble";
 import type { Message } from "./types";
 import { useRunAgentMutation } from "@/store/features/projects-api";
 import { useAgentStream } from "@/lib/hooks/use-agent-stream";
+import { ChatPanel } from "./chat-panel";
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -47,7 +48,7 @@ export function ChatInterface({ projectId, messages, onSendMessage }: ChatInterf
   return (
     <div className="flex-1 overflow-y-auto scrollbar-thin flex flex-col">
       <h2 className="text-lg font-semibold mb-4">Chat</h2>
-      <div className="flex-1 overflow-y-auto scrollbar-thin space-y-4">
+      {/* <div className="flex-1 overflow-y-auto scrollbar-thin space-y-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-3">
             <svg className="size-12 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,7 +60,8 @@ export function ChatInterface({ projectId, messages, onSendMessage }: ChatInterf
           messages.map((msg) => <MessageBubble key={msg.id} message={msg} />)
         )}
         <div ref={messagesEndRef} />
-      </div>
+      </div> */}
+      <ChatPanel events={events} />
       <div className="relative">
         <textarea
           value={chatInput}
