@@ -64,6 +64,7 @@ export default function ProjectPage() {
       />
 
       <ProjectMain
+      projectId={String(projectId)}
         viewMode={viewMode}
         onToggleViewMode={toggleViewMode}
         isSidebarOpen={isSidebarOpen}

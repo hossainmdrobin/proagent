@@ -10,6 +10,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { threadId } from "worker_threads";
 import { AgentEvent } from "@/lib/agent/events";
 import { AIMessage, BaseMessage } from "langchain";
+import { validateProject } from "@/lib/workspace/validate-project";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -128,6 +129,10 @@ export async function POST(
         }
       }
     })
+
+    // VALIDATE THE PROJECT BEFOR SAVE
+    const validation = await validateProject(sandbox);
+
 
     // 6. Save as a new snapshot only after agent invocation succeeds.
     console.log("PERSISTING THE SANDBOX");

@@ -34,12 +34,6 @@ export function ChatInterface({ projectId, messages, onSendMessage }: ChatInterf
     setChatInput("");
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
 
   return (
     <div className="h-screen relative">

@@ -22,6 +22,9 @@ export const projectApi = baseApi.injectEndpoints({
         method: "GET",
       }),
     }),
+    getProjectFiles: build.query({
+      query: ({projectId}) => `/projects/${projectId}/file`
+    }),
 
     runAgent: build.mutation<RunAgentResponse, RunAgentPayload>({
       query: ({ projectId, prompt }) => ({
@@ -30,10 +33,12 @@ export const projectApi = baseApi.injectEndpoints({
         body: { prompt },
       }),
     }),
+
   }),
 });
 
 export const {
   useGetProjectsQuery,
   useRunAgentMutation,
+  useGetProjectFilesQuery
 } = projectApi;
