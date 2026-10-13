@@ -59,7 +59,7 @@
 }
 
 @utility glass-main {
-  @apply glass ml-64 min-h-screen transition-all duration-300;
+  @apply glass ml-[25%] min-h-screen transition-all duration-300;
 }
 
 @utility btn-glass {

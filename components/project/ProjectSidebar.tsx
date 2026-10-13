@@ -26,7 +26,7 @@ export function ProjectSidebar({
 }: ProjectSidebarProps) {
   return (
     <aside className={cn(
-      "glass-sidebar z-50 flex flex-col overflow-hidden",
+      "glass-sidebar z-50 flex flex-col overflow-hidden w-1/4",
       isOpen ? "open" : ""
     )}>
       <div className="flex-1 overflow-y-auto scrollbar-thin flex flex-col">
