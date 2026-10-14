@@ -57,8 +57,7 @@ export async function POST(
       return NextResponse.json({ error: "Prompt must be 1-10000 characters" }, { status: 400 },);
     console.log('CREATING SANDBOX')
     // 3. Create a fresh, isolated sandbox.
-    sandbox = await createSandbox();
-    console.log('CREATING SANDBOX')
+    sandbox = await createSandbox(projectId);
     console.log('RESTORING THE PROJECT')
 
     const restored = await restoreSandboxWorkspace({ sandbox, projectId, ownerId: user.id, });
