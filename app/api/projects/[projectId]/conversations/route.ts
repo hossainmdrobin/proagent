@@ -17,6 +17,7 @@ export async function POST(
 ) {
     try {
         const user = await getCurrentUser();
+        console.log("GOT USER SUCCESS")
 
         if (!user?.id || !mongoose.isValidObjectId(user.id)) {
             return NextResponse.json(
@@ -33,30 +34,7 @@ export async function POST(
                 { status: 400 },
             );
         }
-
-        const body: unknown = await request.json().catch(() => null);
-
-        if (
-            !body ||
-            typeof body !== "object" ||
-            !("title" in body) ||
-            (body.title !== undefined && typeof body.title !== "string")
-        ) {
-            return NextResponse.json(
-                { error: "Invalid conversation data" },
-                { status: 400 },
-            );
-        }
-
-        const title = (body.title as string | undefined)?.trim() || "New chat";
-
-        if (title.length > 120) {
-            return NextResponse.json(
-                { error: "Title must be at most 120 characters" },
-                { status: 400 },
-            );
-        }
-
+        
         await connectToDatabase();
 
         const project = await Project.findOne({
@@ -74,7 +52,7 @@ export async function POST(
         const conversation = await Conversation.create({
             ownerId: new mongoose.Types.ObjectId(user.id),
             projectId: project._id,
-            title,
+            title:`title-${Date.now()}`,
             messages: [],
         });
 

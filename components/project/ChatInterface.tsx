@@ -9,10 +9,11 @@ import { ChatPanel } from "./chat-panel";
 interface ChatInterfaceProps {
   messages: Message[];
   onSendMessage: (content: string) => void;
-  projectId: string
+  projectId: string;
+  chatId: string | null;
 }
 
-export function ChatInterface({ projectId, messages, onSendMessage }: ChatInterfaceProps) {
+export function ChatInterface({ projectId, messages, onSendMessage,chatId }: ChatInterfaceProps) {
   const [chatInput, setChatInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -27,7 +28,8 @@ export function ChatInterface({ projectId, messages, onSendMessage }: ChatInterf
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
-    runAgentStream(projectId, chatInput)
+    if(!chatId) return;
+    runAgentStream(projectId,chatId ,chatInput)
 
     onSendMessage(chatInput);
     setChatInput("");

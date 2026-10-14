@@ -27,6 +27,7 @@ export default function ProjectPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [newFilePath, setNewFilePath] = useState("");
   const [showNewFileDialog, setShowNewFileDialog] = useState(false);
+  const [chatId, setChatId] = useState<string | null>(null)
 
   const {
     data: projectFiles = [],
@@ -137,6 +138,8 @@ export default function ProjectPage() {
         selectedFile={selectedFile}
         onSelectFile={handleSelectFile}
         projectId={projectIdStr}
+        chatId = {chatId}
+        setChatId = {setChatId}
       />
 
       <ProjectMain
