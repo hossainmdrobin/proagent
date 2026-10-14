@@ -15,16 +15,24 @@ import { MetricCharts } from '@/components/dashboard/metric-charts';
 import {
   mockStats,
   mockActivity,
-  mockProjects,
   mockTeam,
   mockNotifications,
 } from '@/lib/dashboard/mock-data';
-import { useGetProjectsQuery } from '@/store/features/projects-api';
+import { useCreateProjectMutation } from '@/store/features/projects-api';
+import { PlusIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { redirect } from 'next/navigation';
 
 export default function DashboardPage() {
-  const {data, isLoading} = useGetProjectsQuery()
-  console.log(data, "The project list");
-  console.log()
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState("")
+  const [createProject, { data, isLoading }] = useCreateProjectMutation();
+console.log(data)
+  // useEffect(() => {
+    // if (data) redirect(`/pronects/${data.id}`)
+  // }, [data])
+
+
   return (
     <WorkspaceLayout
       header={
@@ -42,16 +50,39 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        <SectionHeader title="Metrics" />
-        <MetricCharts />
+        <div className='flex items-center justify-center min-h-48 border rounded-lg'>
+          <div
+            onClick={() => setOpen(true)}
+            className="h-20 flex flex-column items-center justify-center rounded-lg border p-4 cursor-pointer border-black hover:bg-gray-400">
+            <div><PlusIcon /></div>
+            <span>New Project</span>
+          </div>
+          {open && <div className='fixed bg-black/70 backdrop-blur-xl flex items-center justify-center border h-44 flex-col p-4 rounded'>
+            <h1 className='mb-3'>Enter Your Project Name</h1>
+            <div className='w-full'>
+              <input type="text"
+                onChange={(e) => setName(e.target.value)}
+                placeholder='Project Name'
+                name="name" className='rounded outline-none border border-green-200 p-2 block w-full' />
+            </div>
 
-        <SectionHeader title="Quick Actions" />
-        <QuickActions />
+            <div className='flex justify-between mt-3'>
+              <button
+                disabled={Boolean(!name || isLoading)}
+                onClick={() => createProject({ name })}
+                className='bg-green-700 px-4 py-1 rounded mr-4'>save</button>
+              <button onClick={() => setOpen(false)} className='text-yellow-300 outline-1 px-4 py-1 rounded'>Cancel</button>
+            </div>
+          </div>}
+
+        </div>
+        <ProjectGrid />
+
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
             <ActivityFeed activities={mockActivity} limit={5} />
-            <ProjectGrid  />
+            <div></div>
           </div>
           <div className="space-y-6">
             <TeamMembers members={mockTeam} limit={5} />

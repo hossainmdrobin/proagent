@@ -59,7 +59,7 @@ export async function POST(
     // 3. Create a fresh, isolated sandbox.
     sandbox = await createSandbox(projectId);
     const publicUrl = sandbox.domain(3001);
-    console.log("CREATED PUBLUC URL:",publicUrl);
+    console.log("CREATED PUBLUC URL:", publicUrl);
     console.log('RESTORING THE PROJECT')
 
     const restored = await restoreSandboxWorkspace({ sandbox, projectId, ownerId: user.id, });
@@ -157,13 +157,14 @@ export async function POST(
       { error: "Unable to edit project" },
       { status: 500 },
     );
-  } finally {
-    if (sandbox) {
-      try {
-        await sandbox.stop();
-      } catch (error) {
-        console.error("[Sandbox Cleanup]", error);
-      }
-    }
   }
+  // finally {
+  //   if (sandbox) {
+  //     try {
+  //       await sandbox.stop();
+  //     } catch (error) {
+  //       console.error("[Sandbox Cleanup]", error);
+  //     }
+  //   }
+  // }
 }
