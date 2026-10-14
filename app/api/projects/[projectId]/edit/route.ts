@@ -159,12 +159,25 @@ export async function POST(
           }
 
           // 1. Validate the completed project.
-          console.log("VALIDATING PROJECT");
+          controller.enqueue(
+            encode({ type: "message", content: "Validating project..." }),
+          );
 
           const validation = await validateProject(sandbox!);
-          console.log("PROJECT VALIDATION:", validation);
 
-          // 2. Persist the project snapshot.
+          if (!validation.passed) {
+            controller.enqueue(
+              encode({
+                type: "error",
+                message: "Project validation failed. The snapshot was not saved.",
+              }),
+            );
+
+            controller.close();
+            return;
+          }
+
+          // 2. Persist only after validation succeeds.
           console.log("PERSISTING THE SANDBOX");
 
           const saved = await persistSandboxWorkspace({
@@ -201,7 +214,7 @@ export async function POST(
             throw new Error("Conversation was not found during message persistence");
           }
 
-          // 4. Report completion only after saving succeeds.
+          // 4. Mark completion only after persistence succeeds.
           controller.enqueue(encode({ type: "done" }));
           controller.close();
 
