@@ -6,9 +6,10 @@ export interface Message {
 }
 
 export interface ProjectFile {
-  name: string;
+  path: string;
   content: string;
-  language: string;
+  sizeBytes: number;
+  language?: string;
 }
 
 export type ViewMode = "preview" | "code";

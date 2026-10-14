@@ -29,7 +29,7 @@ export function ProjectMain({
   onSelectFile,
 }: ProjectMainProps) {
   const { data, isLoading, error } = useGetProjectFilesQuery({ projectId })
-  console.log("Getting porject files", data)
+  const files = data && data.length > 0 ? data : projectFiles;
   return (
     // /*[calc(100vh-5.5rem)]*/
     <main className="glass-main">
@@ -78,9 +78,9 @@ export function ProjectMain({
           </div>
         ) : (
           <div className="w-full h-full flex">
-            <div className="w-64 border-r border-zinc-800 bg-zinc-950 overflow-y-auto scrollbar-thin">
+<div className="w-64 border-r border-zinc-800 bg-zinc-950 overflow-y-auto scrollbar-thin">
               <FileTree
-                files={projectFiles}
+                files={files}
                 selectedFile={selectedFile}
                 onSelectFile={onSelectFile}
                 maxHeight="h-full"

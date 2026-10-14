@@ -4,12 +4,26 @@ export function formatTime(date: Date): string {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-export function getFileIcon(name: string): string {
+export function getFileName(path: string): string {
+  return path.split("/").pop() || path;
+}
+
+export function getFileIcon(path: string): string {
+  const name = getFileName(path);
   if (name.endsWith(".tsx") || name.endsWith(".ts")) return "📘";
   if (name.endsWith(".jsx") || name.endsWith(".js")) return "📗";
   if (name.endsWith(".css") || name.endsWith(".scss")) return "🎨";
   if (name.endsWith(".json")) return "📋";
   return "📄";
+}
+
+export function getLanguage(path: string): string {
+  const name = getFileName(path);
+  if (name.endsWith(".tsx") || name.endsWith(".ts")) return "typescript";
+  if (name.endsWith(".jsx") || name.endsWith(".js")) return "javascript";
+  if (name.endsWith(".css")) return "css";
+  if (name.endsWith(".json")) return "json";
+  return "plaintext";
 }
 
 export function getPreviewHTML(): string {
@@ -65,7 +79,7 @@ export function getPreviewHTML(): string {
 
 export const DEFAULT_PROJECT_FILES: ProjectFile[] = [
   {
-    name: "index.tsx",
+    path: "index.tsx",
     content: `import React from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -78,10 +92,10 @@ export default function HomePage() {
     </div>
   );
 }`,
-    language: "typescript",
+    sizeBytes: 0,
   },
   {
-    name: "app/layout.tsx",
+    path: "app/layout.tsx",
     content: `import type { Metadata } from 'next';
 import { GeistSans, GeistMono } from 'next/font/google';
 import './globals.css';
@@ -105,10 +119,10 @@ export default function RootLayout({
     </html>
   );
 }`,
-    language: "typescript",
+    sizeBytes: 0,
   },
   {
-    name: "components/ui/button.tsx",
+    path: "components/ui/button.tsx",
     content: `import type { ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 import { Spinner } from "@/components/ui/spinner";
@@ -154,6 +168,6 @@ export function Button({
     </button>
   );
 }`,
-    language: "typescript",
+    sizeBytes: 0,
   },
 ];
