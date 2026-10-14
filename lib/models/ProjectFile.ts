@@ -27,7 +27,7 @@ const ProjectFileSchema = new Schema<ProjectFileRecord>(
     },
     content: {
       type: String,
-      required: true,
+      default:""
     },
     sizeBytes: {
       type: Number,

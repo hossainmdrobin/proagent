@@ -1,6 +1,4 @@
 
-import { ChatOpenAI } from "@langchain/openai";
-import { createDeepAgent } from "deepagents";
 import { NextResponse } from "next/server";
 import { createSandbox } from "@/lib/sandbox/create-sandbox";
 import { createProject } from "@/lib/workspace/create-project";

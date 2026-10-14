@@ -13,6 +13,8 @@ export async function createSandbox(projectId:string) {
     timeout: 5 * 60 * 1000,
     runtime: "node24",
     persistent:true,
+    networkPolicy:"allow-all",
+    ports:[3001],
     tags:{
       app:"proagent",
       projectId: projectId

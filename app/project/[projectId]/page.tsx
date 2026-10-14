@@ -1,23 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { ProjectSidebar } from "@/components/project/ProjectSidebar";
 import { ProjectMain } from "@/components/project/ProjectMain";
-import { DEFAULT_PROJECT_FILES } from "@/components/project/utils";
 import type { Message, ProjectFile, ViewMode } from "@/components/project/types";
 import { useParams } from "next/navigation";
+import {
+  useGetProjectFilesQuery,
+  useCreateProjectFileMutation,
+  useUpdateProjectFileMutation,
+  useDeleteProjectFileMutation,
+} from "@/store/features/projects-api";
+import { Button } from "@/components/ui/button";
+import { Plus, Trash2, Save } from "lucide-react";
 
 export default function ProjectPage() {
   const params = useParams();
   const { projectId } = params || "";
+  const projectIdStr = String(projectId);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("preview");
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedFile, setSelectedFile] = useState<ProjectFile | null>(null);
-  const [projectFiles] = useState<ProjectFile[]>(DEFAULT_PROJECT_FILES);
+  const [editingContent, setEditingContent] = useState<string>("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [newFilePath, setNewFilePath] = useState("");
+  const [showNewFileDialog, setShowNewFileDialog] = useState(false);
 
-  const handleSendMessage = (content: string) => {
+  const {
+    data: projectFiles = [],
+    isLoading,
+    error,
+    refetch,
+  } = useGetProjectFilesQuery({ projectId: projectIdStr });
+
+  const [createFile] = useCreateProjectFileMutation();
+  const [updateFile] = useUpdateProjectFileMutation();
+  const [deleteFile] = useDeleteProjectFileMutation();
+
+  const handleSendMessage = useCallback((content: string) => {
     const userMessage: Message = {
       id: crypto.randomUUID(),
       role: "user",
@@ -36,10 +58,64 @@ export default function ProjectPage() {
       };
       setMessages((prev) => [...prev, assistantMessage]);
     }, 1000);
+  }, []);
+
+  const handleSelectFile = useCallback((file: ProjectFile) => {
+    setSelectedFile(file);
+    setEditingContent(file.content);
+    setIsEditing(false);
+  }, []);
+
+  const handleCreateFile = async () => {
+    if (!newFilePath.trim()) return;
+    try {
+      await createFile({
+        projectId: projectIdStr,
+        path: newFilePath,
+        content: "",
+      }).unwrap();
+      setNewFilePath("");
+      setShowNewFileDialog(false);
+      refetch();
+    } catch (err) {
+      console.error("Failed to create file:", err);
+    }
   };
 
-  const handleSelectFile = (file: ProjectFile) => {
-    setSelectedFile(file);
+  const handleUpdateFile = async () => {
+    if (!selectedFile) return;
+    try {
+      await updateFile({
+        projectId: projectIdStr,
+        fileId: selectedFile._id,
+        path: selectedFile.path,
+        content: editingContent,
+      }).unwrap();
+      setIsEditing(false);
+      refetch();
+    } catch (err) {
+      console.error("Failed to update file:", err);
+    }
+  };
+
+  const handleDeleteFile = async (file: ProjectFile) => {
+    if (!confirm(`Delete ${file.path}?`)) return;
+    try {
+      await deleteFile({
+        projectId: projectIdStr,
+        fileId: file._id,
+      }).unwrap();
+      if (selectedFile?._id === file._id) {
+        setSelectedFile(null);
+      }
+      refetch();
+    } catch (err) {
+      console.error("Failed to delete file:", err);
+    }
+  };
+
+  const handleNewFile = () => {
+    setShowNewFileDialog(true);
   };
 
   const toggleViewMode = () => {
@@ -60,11 +136,11 @@ export default function ProjectPage() {
         projectFiles={projectFiles}
         selectedFile={selectedFile}
         onSelectFile={handleSelectFile}
-        projectId={String(projectId)}
+        projectId={projectIdStr}
       />
 
       <ProjectMain
-      projectId={String(projectId)}
+        projectId={projectIdStr}
         viewMode={viewMode}
         onToggleViewMode={toggleViewMode}
         isSidebarOpen={isSidebarOpen}
@@ -72,6 +148,20 @@ export default function ProjectPage() {
         projectFiles={projectFiles}
         selectedFile={selectedFile}
         onSelectFile={handleSelectFile}
+        editingContent={editingContent}
+        setEditingContent={setEditingContent}
+        isEditing={isEditing}
+        setIsEditing={setIsEditing}
+        isLoading={isLoading}
+        error={error}
+        onSave={handleUpdateFile}
+        onNewFile={handleNewFile}
+        onDeleteFile={handleDeleteFile}
+        showNewFileDialog={showNewFileDialog}
+        setShowNewFileDialog={setShowNewFileDialog}
+        newFilePath={newFilePath}
+        setNewFilePath={setNewFilePath}
+        onCreateFile={handleCreateFile}
       />
 
       {isSidebarOpen && (

@@ -6,10 +6,15 @@ export interface Message {
 }
 
 export interface ProjectFile {
+  _id: string;
+  projectId: string;
+  snapshotId: string;
   path: string;
   content: string;
   sizeBytes: number;
   language?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type ViewMode = "preview" | "code";
