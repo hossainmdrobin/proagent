@@ -42,6 +42,9 @@ export interface DeleteFilePayload {
   projectId: string;
   fileId: string;
 }
+export interface CreateProjectRequest {
+  name:string
+}
 
 export const projectApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -51,9 +54,16 @@ export const projectApi = baseApi.injectEndpoints({
         method: "GET",
       }),
     }),
+    createProject: build.mutation<ProjectRecord,CreateProjectRequest>({
+      query: (body) => ({
+        url: "/projects",
+        method: "POST",
+        body
+      })
+    }),
     getProjectFiles: build.query<ProjectFileRecord[], { projectId: string }>({
       query: ({ projectId }) => `/projects/${projectId}/file`,
-      providesTags:["FILE_CREATE","FILE_UPDATE", "FILE_DELETE"]
+      providesTags: ["FILE_CREATE", "FILE_UPDATE", "FILE_DELETE"]
     }),
     createProjectFile: build.mutation<ProjectFileRecord, CreateFilePayload>({
       query: ({ projectId, ...body }) => ({
@@ -61,7 +71,7 @@ export const projectApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags:["FILE_CREATE"]
+      invalidatesTags: ["FILE_CREATE"]
     }),
     updateProjectFile: build.mutation<ProjectFileRecord, UpdateFilePayload>({
       query: ({ projectId, ...body }) => ({
@@ -69,14 +79,14 @@ export const projectApi = baseApi.injectEndpoints({
         method: "PUT",
         body,
       }),
-      invalidatesTags:["FILE_UPDATE"]
+      invalidatesTags: ["FILE_UPDATE"]
     }),
     deleteProjectFile: build.mutation<{ success: boolean }, DeleteFilePayload>({
       query: ({ projectId, fileId }) => ({
         url: `/projects/${projectId}/file?fileId=${fileId}`,
         method: "DELETE",
       }),
-      invalidatesTags:["FILE_DELETE"]
+      invalidatesTags: ["FILE_DELETE"]
     }),
   }),
 });
