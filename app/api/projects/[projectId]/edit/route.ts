@@ -7,17 +7,20 @@ import {
   restoreSandboxWorkspace,
 } from "@/lib/workspace/sandbox-workspace";
 import { getCurrentUser } from "@/lib/auth/session";
-import { threadId } from "worker_threads";
 import { AgentEvent } from "@/lib/agent/events";
 import { AIMessage, BaseMessage } from "langchain";
 import { validateProject } from "@/lib/workspace/validate-project";
+import { Conversation } from "@/lib/models/Conversaion";
+import { connectToDatabase } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 type RouteContext = {
-  params: Promise<{ projectId: string }>;
+  params: Promise<{ projectId: string, conversationId: string }>;
 };
+
+type BodyType = { prompt: string, conversationId: string }
 
 function encode(event: AgentEvent) {
   return new TextEncoder().encode(
@@ -48,7 +51,8 @@ export async function POST(
     if (!/^[a-f\d]{24}$/i.test(projectId))
       return NextResponse.json({ error: "Invalid project ID" }, { status: 400 },);
 
-    const body: { prompt: string } = await request.json();
+    const body: BodyType = await request.json();
+
     if (!body || typeof body !== "object" || !("prompt" in body) || typeof body.prompt !== "string")
       return NextResponse.json({ error: "A prompt is required" }, { status: 400 },);
     console.log("VALIDATING PROMPT")
@@ -56,6 +60,32 @@ export async function POST(
     if (!prompt || prompt.length > 10000)
       return NextResponse.json({ error: "Prompt must be 1-10000 characters" }, { status: 400 },);
     console.log('CREATING SANDBOX')
+
+
+    // SAVING THE MESSAGE PROMPT
+    await connectToDatabase();
+
+    const conversation = await Conversation.findOne({
+      _id: body.conversationId,
+      projectId,
+      ownerId: user.id,
+    });
+
+    if (!conversation) {
+      return NextResponse.json(
+        { error: "Conversation not found" },
+        { status: 404 },
+      );
+    }
+    conversation.messages.push({
+      role: "user",
+      content: prompt,
+      createdAt: new Date(),
+    });
+
+    await conversation.save();
+
+
     // 3. Create a fresh, isolated sandbox.
     sandbox = await createSandbox(projectId);
     const publicUrl = sandbox.domain(3001);
@@ -85,9 +115,13 @@ export async function POST(
     }, {
       streamMode: 'updates',
       configurable: {
-        thread_id: "your_tread_id"
+        thread_id: `project-${projectId}-chat-${body.conversationId}`,
       }
     });
+
+
+    // THE ASSISTANT MESSAGE VARIABLE
+    let assistantResponse = "";
     const readable = new ReadableStream({
       async start(controller) {
         try {
@@ -107,6 +141,7 @@ export async function POST(
                   }
                 }
                 if (typeof message.content === "string" && message.content) {
+                  assistantResponse = message.content;
                   controller.enqueue(encode({ type: "message", content: message.content }))
                 }
               }
@@ -117,7 +152,57 @@ export async function POST(
               }
             }
           }
-          controller.enqueue(encode({ type: "done" }))
+
+
+          if (!assistantResponse.trim()) {
+            throw new Error("Agent completed without a final assistant response");
+          }
+
+          // 1. Validate the completed project.
+          console.log("VALIDATING PROJECT");
+
+          const validation = await validateProject(sandbox!);
+          console.log("PROJECT VALIDATION:", validation);
+
+          // 2. Persist the project snapshot.
+          console.log("PERSISTING THE SANDBOX");
+
+          const saved = await persistSandboxWorkspace({
+            sandbox: sandbox!,
+            projectId,
+            ownerId: user.id,
+            expectedVersion: restored.version,
+          });
+
+          console.log("SANDBOX PERSISTED:", saved);
+
+          // 3. Save the assistant response to MongoDB.
+          const result = await Conversation.updateOne(
+            {
+              _id: body.conversationId,
+              projectId,
+              ownerId: user.id,
+            },
+            {
+              $push: {
+                messages: {
+                  role: "assistant",
+                  content: assistantResponse,
+                  createdAt: new Date(),
+                },
+              },
+              $set: {
+                updatedAt: new Date(),
+              },
+            },
+          );
+
+          if (result.matchedCount !== 1) {
+            throw new Error("Conversation was not found during message persistence");
+          }
+
+          // 4. Report completion only after saving succeeds.
+          controller.enqueue(encode({ type: "done" }));
           controller.close();
 
         } catch (error) {
@@ -130,19 +215,6 @@ export async function POST(
         }
       }
     })
-
-    // VALIDATE THE PROJECT BEFOR SAVE
-    const validation = await validateProject(sandbox);
-
-
-    // 6. Save as a new snapshot only after agent invocation succeeds.
-    console.log("PERSISTING THE SANDBOX");
-    const saved = await persistSandboxWorkspace({
-      sandbox,
-      projectId,
-      ownerId: user.id,
-      expectedVersion: restored.version,
-    });
 
     return new Response(readable, {
       headers: {
