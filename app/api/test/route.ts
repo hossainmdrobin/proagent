@@ -1,6 +1,4 @@
 
-import { ChatOpenAI } from "@langchain/openai";
-import { createDeepAgent } from "deepagents";
 import { NextResponse } from "next/server";
 import { createSandbox } from "@/lib/sandbox/create-sandbox";
 import { createProject } from "@/lib/workspace/create-project";
@@ -20,7 +18,7 @@ export async function POST(request: Request) {
         name: ("Project" + Math.random()*1000).slice(0,10),
     });
 
-    const firstSandbox = await createSandbox();
+    const firstSandbox = await createSandbox(project.id);
 
     try {
         await firstSandbox.fs.mkdir(
@@ -48,7 +46,7 @@ export async function POST(request: Request) {
     }
 
     // A new sandbox must be able to reconstruct the project.
-    const secondSandbox = await createSandbox();
+    const secondSandbox = await createSandbox(project.id);
 
     try {
         const restored = await restoreSandboxWorkspace({

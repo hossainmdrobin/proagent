@@ -19,7 +19,6 @@ export function ChatInterface({ projectId, messages, onSendMessage }: ChatInterf
   // const [runAgent, { data, isLoading, }] = useRunAgentMutation()
   // console.log("PLEASE PUT YOUR HAND :", data);
   const { runAgentStream, events, loading, error } = useAgentStream();
-  console.log(events, loading, error);
 
 
   useEffect(() => {

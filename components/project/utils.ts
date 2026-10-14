@@ -79,6 +79,9 @@ export function getPreviewHTML(): string {
 
 export const DEFAULT_PROJECT_FILES: ProjectFile[] = [
   {
+    _id: "default-1",
+    projectId: "",
+    snapshotId: "",
     path: "index.tsx",
     content: `import React from 'react';
 import { Button } from '@/components/ui/button';
@@ -93,8 +96,13 @@ export default function HomePage() {
   );
 }`,
     sizeBytes: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
+    _id: "default-2",
+    projectId: "",
+    snapshotId: "",
     path: "app/layout.tsx",
     content: `import type { Metadata } from 'next';
 import { GeistSans, GeistMono } from 'next/font/google';
@@ -120,8 +128,13 @@ export default function RootLayout({
   );
 }`,
     sizeBytes: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
+    _id: "default-3",
+    projectId: "",
+    snapshotId: "",
     path: "components/ui/button.tsx",
     content: `import type { ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
@@ -169,5 +182,7 @@ export function Button({
   );
 }`,
     sizeBytes: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
 ];
