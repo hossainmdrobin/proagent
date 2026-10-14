@@ -13,9 +13,9 @@ interface ProjectSidebarProps {
   projectFiles: ProjectFile[];
   selectedFile: ProjectFile | null;
   onSelectFile: (file: ProjectFile) => void;
-  projectId:string ;
-  chatId:string | null,
-  setChatId: (chatId:string) => void;
+  projectId: string;
+  chatId: string | null,
+  setChatId: (chatId: string) => void;
 }
 
 export function ProjectSidebar({
@@ -29,15 +29,15 @@ export function ProjectSidebar({
   selectedFile,
   onSelectFile,
 }: ProjectSidebarProps) {
-    
+
 
   return (
     <aside className={cn(
       "glass-sidebar z-50 fixed w-1/4 h-screen",
       isOpen ? "open" : ""
     )}>
-      {!chatId  && <BeforeChat setChatId={setChatId} projectId={projectId}  />}
-        {/* <ChatInterface chatId={chatId} projectId={projectId} messages={messages} onSendMessage={onSendMessage} />       */}
+      {!chatId && <BeforeChat setChatId={setChatId} projectId={projectId} />}
+      {chatId && <ChatInterface chatId={chatId} projectId={projectId} messages={messages} onSendMessage={onSendMessage} />}
     </aside>
   );
 }

@@ -5,15 +5,17 @@ import { Button } from "@/components/ui/button";
 import type { Message } from "./types";
 import { useAgentStream } from "@/lib/hooks/use-agent-stream";
 import { ChatPanel } from "./chat-panel";
+import { CornerDownLeft } from "lucide-react";
 
 interface ChatInterfaceProps {
   messages: Message[];
   onSendMessage: (content: string) => void;
   projectId: string;
   chatId: string | null;
+  setChatId: (id: string | null)=>void
 }
 
-export function ChatInterface({ projectId, messages, onSendMessage,chatId }: ChatInterfaceProps) {
+export function ChatInterface({ projectId, messages, onSendMessage, chatId, setChatId }: ChatInterfaceProps) {
   const [chatInput, setChatInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -28,8 +30,8 @@ export function ChatInterface({ projectId, messages, onSendMessage,chatId }: Cha
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
-    if(!chatId) return;
-    runAgentStream(projectId,chatId ,chatInput)
+    if (!chatId) return;
+    runAgentStream(projectId, chatId, chatInput)
 
     onSendMessage(chatInput);
     setChatInput("");
@@ -38,7 +40,15 @@ export function ChatInterface({ projectId, messages, onSendMessage,chatId }: Cha
 
   return (
     <div className="h-screen relative">
-      <h2 className="text-lg font-semibold h-12 bg-green-400">Chat</h2>
+      <div className="h-12 flex items-center justify-between p-3 transition ">
+        <button
+          onClick={() => setChatId(null)}
+          className="flex items-center pl-3 justify-center bg-purple-800/40 hover:pl-2 pr-2 group rounded p-1">
+          <CornerDownLeft size={20} />
+          <span className="ml-1 group-hover:ml-2">Back</span>
+        </button>
+        <p className="text-lg font-semibold">Chat</p>
+      </div>
       <div className="h-[calc(100vh-3rem)] overflow-y-auto srollbar-none">
         <ChatPanel events={events} />
       </div>
