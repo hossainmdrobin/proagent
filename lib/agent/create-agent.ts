@@ -1,158 +1,74 @@
 import "server-only";
-
-import { tool } from "langchain";
 import { ChatOpenAI } from "@langchain/openai";
 import { createDeepAgent } from "deepagents";
-import { z } from "zod";
 import type { Sandbox } from "@vercel/sandbox";
 
-const ROOT = "/vercel/sandbox/project";
 
 
-import path from "node:path";
+import { createPlannerAgent } from "./subagents/planner";
+import { createCodingAgent } from "./subagents/coding";
+import { createUIAgent } from "./subagents/ui";
+import { createBackendAgent } from "./subagents/backend";
+import { createTestingAgent } from "./subagents/testing";
+import { createReviewerAgent } from "./subagents/reviewer";
+import { coreTools, ROOT } from "./tools";
 
 
-function safePath(input: string): string {
-    const value = input.trim();
+const model = new ChatOpenAI({
+    model: "gc/grok-4.7",
+    temperature: 0,
+    apiKey: process.env.OMNIROUTE_API_KEY,
+    maxTokens: 1024,
+    configuration: {
+        baseURL: process.env.OMNIROUTE_BASE_URL?.trim(),
+    },
+})
 
-    // An empty path or "." means the project root.
-    if (!value || value === ".") {
-        return ROOT;
-    }
-
-    // Accept both Windows and Unix separators, but reject
-    // absolute paths and Windows drive paths.
-    if (
-        value.includes("\0") ||
-        path.posix.isAbsolute(value) ||
-        path.win32.isAbsolute(value)
-    ) {
-        throw new Error("Invalid project path");
-    }
-
-    const normalized = value.replace(/\\/g, "/");
-    const segments = normalized.split("/");
-
-    if (segments.some((segment) => segment === "..")) {
-        throw new Error("Invalid project path");
-    }
-
-    const resolved = path.posix.resolve(ROOT, normalized);
-    const relative = path.posix.relative(ROOT, resolved);
-
-    if (
-        relative === ".." ||
-        relative.startsWith("../") ||
-        path.posix.isAbsolute(relative)
-    ) {
-        throw new Error("Invalid project path");
-    }
-
-    return resolved;
-}
 
 
 export function createProjectAgent(sandbox: Sandbox) {
-    const writeFile = tool(
-        async ({ path, content }) => {
-            const target = safePath(path);
-
-            await sandbox.fs.mkdir(
-                target.substring(0, target.lastIndexOf("/")),
-                { recursive: true },
-            );
-
-            await sandbox.fs.writeFile(target, content);
-
-            return `File written: ${path}`;
-        },
-        {
-            name: "write_project_file",
-            description: "Create or update a text file in the project.",
-            schema: z.object({
-                path: z.string().min(1).max(200),
-                content: z.string().max(100_000),
-            }),
-        },
-    );
-
-    const readFile = tool(
-        async ({ path }) => {
-            const content = await sandbox.fs.readFile(
-                safePath(path),
-                "utf8",
-            );
-
-            return String(content).slice(0, 20_000);
-        },
-        {
-            name: "read_project_file",
-            description: "Read a project file.",
-            schema: z.object({
-                path: z.string().min(1).max(200),
-            }),
-        },
-    );
-
-    const listFiles = tool(
-        async ({ path }) => {
-            const result = await sandbox.runCommand({
-                cmd: "ls",
-                args: ["-la", safePath(path)],
-                cwd: ROOT,
-            });
-
-            return (await result.stdout()).slice(0, 10_000);
-        },
-        {
-            name: "list_project_files",
-            description:
-                "List files and directories inside the project. " +
-                'Use "." to list the project root. ' +
-                "Paths must be relative to the project root, such as " +
-                '"src" or "src/app". Never use absolute paths.',
-            schema: z.object({
-                path: z.string().default("."),
-            }),
-        },
-    );
-
-    const runCommand = tool(
-        async ({ command, args }) => {
-            const result = await sandbox.runCommand({
-                cmd: command,
-                args,
-                cwd: ROOT,
-            });
-
-            return JSON.stringify({
-                exitCode: result.exitCode,
-                stdout: (await result.stdout()).slice(0, 12_000),
-                stderr: (await result.stderr()).slice(0, 12_000),
-            });
-        },
-        {
-            name: "run_project_command",
-            description:
-                "Run a project command inside the isolated sandbox.",
-            schema: z.object({
-                command: z.enum(["node", "npm"]),
-                args: z.array(z.string().max(200)).max(20),
-            }),
-        },
-    );
-
+    const { writeFile, readFile, listFiles, runCommand } = coreTools(sandbox)
+    const planner = createPlannerAgent(model, sandbox);
+    const coding = createCodingAgent(model,sandbox);
+    const ui = createUIAgent(model, sandbox);
+    const backend = createBackendAgent(model, sandbox);
+    const testing = createTestingAgent(model, sandbox);
+    const reviewer = createReviewerAgent(model, sandbox);
     return createDeepAgent({
-        model: new ChatOpenAI({
-            model: "gc/grok-4.7",
-            temperature: 0,
-            apiKey: process.env.OMNIROUTE_API_KEY,
-            maxTokens: 1024,
-            configuration: {
-                baseURL: process.env.OMNIROUTE_BASE_URL?.trim(),
-            },
-        }),
+        model,
         tools: [writeFile, readFile, listFiles, runCommand],
+        subagents: [
+            {
+                name: "planner",
+                description: "Plans application architecture, requirements, and implementation tasks.",
+                runnable: planner,
+            },
+            {
+                name: "coding",
+                description: "Implements features and edits application source files.",
+                runnable: coding,
+            },
+            {
+                name: "ui",
+                description: "Builds responsive frontend interfaces and reusable components.",
+                runnable: ui,
+            },
+            {
+                name: "backend",
+                description: "Implements APIs, database operations, authentication, and server logic.",
+                runnable: backend,
+            },
+            {
+                name: "testing",
+                description: "Runs available tests and builds, diagnoses failures, and reports results.",
+                runnable: testing,
+            },
+            {
+                name: "reviewer",
+                description: "Reviews code quality, security, regressions, and implementation completeness.",
+                runnable: reviewer,
+            },
+        ],
         systemPrompt: `
 You are an AI coding agent.
 
