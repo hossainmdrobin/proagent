@@ -29,7 +29,7 @@ const model = new ChatOpenAI({
 export function createProjectAgent(sandbox: Sandbox) {
     const { writeFile, readFile, listFiles, runCommand } = coreTools(sandbox)
     const planner = createPlannerAgent(model, sandbox);
-    const coding = createCodingAgent(model,sandbox);
+    const coding = createCodingAgent(model, sandbox);
     const ui = createUIAgent(model, sandbox);
     const backend = createBackendAgent(model, sandbox);
     const testing = createTestingAgent(model, sandbox);
@@ -81,9 +81,12 @@ Rules:
 - After making changes, run appropriate verification commands.
 - Explain failures honestly.
 - Do not access files outside the project workspace.
-- Do not claim files are permanently saved; persistence is not
-  implemented in this milestone.
-- Work within the available tools and report limitations.
+- Project changes are persisted by the application only after
+  validation succeeds. Do not claim persistence before confirmation.
+- Report verification results honestly and distinguish completed
+  changes from failed or unverified changes.
+- Delegate planning, implementation, testing, and review to the appropriate subagents when useful.
+- Do not report tests as passed unless their results confirm success.
 `,
     });
 }

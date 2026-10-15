@@ -8,16 +8,17 @@ import {
 } from "@/lib/workspace/sandbox-workspace";
 import { getCurrentUser } from "@/lib/auth/session";
 import { AgentEvent } from "@/lib/agent/events";
-import { AIMessage, BaseMessage } from "langchain";
+import { AIMessage, BaseMessage } from "@langchain/core/messages";
 import { validateProject } from "@/lib/workspace/validate-project";
 import { Conversation } from "@/lib/models/Conversaion";
 import { connectToDatabase } from "@/lib/db";
+import type { ConversationMessage } from "@/lib/models/Conversaion";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 type RouteContext = {
-  params: Promise<{ projectId: string, conversationId: string }>;
+  params: Promise<{ projectId: string }>;
 };
 
 type BodyType = { prompt: string, conversationId: string }
@@ -99,25 +100,29 @@ export async function POST(
     const agent = createProjectAgent(sandbox);
     console.log('STREAMING');
 
-    const stream = await agent.stream({
-      messages: [
-        {
-          role: "user",
-          content: [
-            `Modify the existing project to satisfy this request:`,
-            prompt,
-            "",
-            "Preserve unrelated existing functionality.",
-            "Do not claim tests passed unless you ran them.",
-          ].join("\n"),
-        },
-      ],
-    }, {
-      streamMode: 'updates',
-      configurable: {
-        thread_id: `project-${projectId}-chat-${body.conversationId}`,
-      }
-    });
+    const history = conversation.messages.map(
+      (message: ConversationMessage, index: number, messages: ConversationMessage[]) => ({
+        role: message.role,
+        content:
+          index === messages.length - 1 && message.role === "user"
+            ? [
+              "Modify the existing project to satisfy this request:",
+              message.content,
+              "",
+              "Preserve unrelated existing functionality.",
+              "Do not claim tests passed unless you ran them.",
+            ].join("\n")
+            : message.content,
+      }));
+    const agentStartedAt = Date.now();
+    const stream = await agent.stream(
+      { messages: history },
+      {
+        streamMode: 'updates',
+        configurable: {
+          thread_id: `project-${projectId}-chat-${body.conversationId}`,
+        }
+      });
 
 
     // THE ASSISTANT MESSAGE VARIABLE
@@ -127,8 +132,25 @@ export async function POST(
         try {
           controller.enqueue(encode({ type: "thinking" }))
           for await (const chunk of stream) {
+            console.log(
+              "AGENT STREAM DURATION (seconds):",
+              ((Date.now() - agentStartedAt) / 1000).toFixed(1),
+            );
             if (chunk.model_request) {
               const messages = chunk.model_request.messages;
+
+              console.log(
+                "MODEL UPDATE:",
+                messages.map((message) => ({
+                  type: message.getType(),
+                  content: typeof message.content === "string"
+                    ? message.content.slice(0, 200)
+                    : "[non-string content]",
+                  toolCalls: message instanceof AIMessage
+                    ? message.tool_calls?.map((call) => call.name)
+                    : [],
+                })),
+              );
 
               for (const message of messages) {
                 if (!isAIMessage(message)) {
@@ -141,8 +163,14 @@ export async function POST(
                   }
                 }
                 if (typeof message.content === "string" && message.content) {
-                  assistantResponse = message.content;
-                  controller.enqueue(encode({ type: "message", content: message.content }))
+                  // Only capture an AI message with no tool calls as a final-answer candidate.
+                  if (message.tool_calls?.length === 0) {
+                    assistantResponse = message.content;
+                  }
+
+                  controller.enqueue(
+                    encode({ type: "message", content: message.content })
+                  );
                 }
               }
             }
@@ -152,6 +180,10 @@ export async function POST(
               }
             }
           }
+          console.log(
+            "AGENT STREAM DURATION (seconds):",
+            ((Date.now() - agentStartedAt) / 1000).toFixed(1),
+          );
 
 
           if (!assistantResponse.trim()) {
@@ -162,8 +194,13 @@ export async function POST(
           controller.enqueue(
             encode({ type: "message", content: "Validating project..." }),
           );
+          const validationStartedAt = Date.now();
 
           const validation = await validateProject(sandbox!);
+          console.log(
+            "VALIDATION DURATION (seconds):",
+            ((Date.now() - validationStartedAt) / 1000).toFixed(1),
+          );
 
           if (!validation.passed) {
             controller.enqueue(

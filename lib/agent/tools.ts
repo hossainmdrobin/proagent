@@ -134,5 +134,39 @@ export const coreTools = (sandbox: Sandbox,) => {
             }),
         },
     );
-    return {writeFile, readFile, runCommand, listFiles}
+
+
+    const startPreview = tool(
+        async () => {
+            const result = await sandbox.runCommand({
+                cmd: "npm",
+                args: [
+                    "run",
+                    "dev",
+                    "--",
+                    "--hostname",
+                    "0.0.0.0",
+                    "--port",
+                    "3001",
+                ],
+                cwd: ROOT,
+                detached: true,
+            });
+
+            return JSON.stringify({
+                status: "starting",
+                commandId: result.cmdId,
+                previewUrl: sandbox.domain(3001),
+                message: "Preview server started asynchronously. Verify that it becomes ready before opening the URL.",
+            });
+        },
+        {
+            name: "start_preview_server",
+            description:
+                "Start the project's development server in detached mode on port 3001. Use after dependencies are installed and the project has a dev script. Do not start another server if one is already running.",
+            schema: z.object({}),
+        },
+    );
+
+    return { writeFile, readFile, runCommand, listFiles, startPreview }
 }
