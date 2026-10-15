@@ -27,10 +27,10 @@ export default function DashboardPage() {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [createProject, { data, isLoading }] = useCreateProjectMutation();
-console.log(data)
-  // useEffect(() => {
-    // if (data) redirect(`/pronects/${data.id}`)
-  // }, [data])
+  console.log(data)
+  useEffect(() => {
+    if (data) redirect(`/pronects/${data._id}`)
+  }, [data])
 
 
   return (

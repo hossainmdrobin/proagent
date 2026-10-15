@@ -54,6 +54,9 @@ export const projectApi = baseApi.injectEndpoints({
         method: "GET",
       }),
     }),
+    getProjectById: build.query<ProjectRecord, {projectId:string}>({
+      query:({projectId}) => `/projects/${projectId}`
+    }),
     createProject: build.mutation<ProjectRecord,CreateProjectRequest>({
       query: (body) => ({
         url: "/projects",
@@ -95,6 +98,7 @@ export const {
   useGetProjectsQuery,
   useCreateProjectMutation,
   useGetProjectFilesQuery,
+  useGetProjectByIdQuery,
   useCreateProjectFileMutation,
   useUpdateProjectFileMutation,
   useDeleteProjectFileMutation,

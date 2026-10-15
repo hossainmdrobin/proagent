@@ -5,8 +5,9 @@ import { cn } from "@/lib/cn";
 import { FileTree } from "./FileTree";
 import { getPreviewHTML } from "./utils";
 import type { ProjectFile, ViewMode } from "./types";
-import { useGetProjectFilesQuery } from "@/store/features/projects-api";
+import { useGetProjectByIdQuery, useGetProjectFilesQuery } from "@/store/features/projects-api";
 import { Plus, Save, X, Trash2, File as FileIcon } from "lucide-react";
+import { ProjectRecord } from "@/lib/models/Project";
 
 interface ProjectMainProps {
   viewMode: ViewMode;
@@ -60,6 +61,8 @@ export function ProjectMain({
   const { data, isLoading: queryLoading } = useGetProjectFilesQuery({ projectId });
   const files = data && data.length > 0 ? data : projectFiles;
   const loading = isLoading || queryLoading;
+    const { data:projectData, error:projectError } = useGetProjectByIdQuery({ projectId })
+
 
   return (
     <main className="glass-main">
@@ -100,7 +103,7 @@ export function ProjectMain({
         {viewMode === "preview" ? (
           <div className="w-full h-full flex items-center justify-center">
             <iframe
-              srcDoc={getPreviewHTML()}
+              src={projectData?.previewUrl || ""}
               className="w-full h-full border border-zinc-800 bg-white"
               sandbox="allow-scripts allow-same-origin allow-forms"
               title="Project Preview"

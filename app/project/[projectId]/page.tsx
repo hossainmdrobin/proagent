@@ -138,11 +138,11 @@ export default function ProjectPage() {
         selectedFile={selectedFile}
         onSelectFile={handleSelectFile}
         projectId={projectIdStr}
-        chatId = {chatId}
-        setChatId = {setChatId}
+        chatId={chatId}
+        setChatId={setChatId}
       />
 
-      <ProjectMain
+       <ProjectMain
         projectId={projectIdStr}
         viewMode={viewMode}
         onToggleViewMode={toggleViewMode}
