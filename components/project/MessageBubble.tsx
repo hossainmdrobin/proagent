@@ -2,17 +2,17 @@
 
 import { cn } from "@/lib/cn";
 import { formatTime } from "./utils";
-import type { Message } from "./types";
+import { ConversationMessage } from "@/store/features/conversations-api";
 
 interface MessageBubbleProps {
-  message: Message;
+  message: ConversationMessage;
 }
 
 export function MessageBubble({ message }: MessageBubbleProps) {
   return (
     <div
       className={cn(
-        "flex gap-3 animate-fade-in",
+        "flex gap-3 animate-fade-in my-2",
         message.role === "user" && "flex-row-reverse"
       )}
     >
@@ -22,8 +22,8 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           message.role === "user"
             ? "bg-accent-primary text-white"
             : message.role === "assistant"
-            ? "bg-accent-secondary text-white"
-            : "bg-zinc-600 text-white"
+              ? "bg-accent-secondary text-white"
+              : "bg-zinc-600 text-white"
         )}
       >
         {message.role === "user" ? "U" : message.role === "assistant" ? "AI" : "S"}
@@ -37,7 +37,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         )}
       >
         <p className="whitespace-pre-wrap text-sm">{message.content}</p>
-        <span className="text-xs text-zinc-500 mt-1 block">{formatTime(message.timestamp)}</span>
+        <span className="text-xs text-zinc-500 mt-1 block">{formatTime(new Date(message.createdAt))}</span>
       </div>
     </div>
   );

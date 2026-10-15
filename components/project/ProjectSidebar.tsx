@@ -37,7 +37,7 @@ export function ProjectSidebar({
       isOpen ? "open" : ""
     )}>
       {!chatId && <BeforeChat setChatId={setChatId} projectId={projectId} />}
-      {chatId && <ChatInterface chatId={chatId} projectId={projectId} messages={messages} onSendMessage={onSendMessage} />}
+      {chatId && <ChatInterface chatId={chatId} setChatId={setChatId} projectId={projectId} messages={messages} onSendMessage={onSendMessage} />}
     </aside>
   );
 }

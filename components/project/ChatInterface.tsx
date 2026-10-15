@@ -6,13 +6,15 @@ import type { Message } from "./types";
 import { useAgentStream } from "@/lib/hooks/use-agent-stream";
 import { ChatPanel } from "./chat-panel";
 import { CornerDownLeft } from "lucide-react";
+import { MessageBubble } from "./MessageBubble";
+import { useGetConversationQuery } from "@/store/features/conversations-api";
 
 interface ChatInterfaceProps {
   messages: Message[];
   onSendMessage: (content: string) => void;
   projectId: string;
   chatId: string | null;
-  setChatId: (id: string | null)=>void
+  setChatId: (id: string ) => void
 }
 
 export function ChatInterface({ projectId, messages, onSendMessage, chatId, setChatId }: ChatInterfaceProps) {
@@ -22,6 +24,8 @@ export function ChatInterface({ projectId, messages, onSendMessage, chatId, setC
   // const [runAgent, { data, isLoading, }] = useRunAgentMutation()
   // console.log("PLEASE PUT YOUR HAND :", data);
   const { runAgentStream, events, loading, error } = useAgentStream();
+  const { data, } = useGetConversationQuery({ conversationId: chatId || "", projectId });
+  console.log("CONVERSATION DATA", data)
 
 
   useEffect(() => {
@@ -42,7 +46,7 @@ export function ChatInterface({ projectId, messages, onSendMessage, chatId, setC
     <div className="h-screen relative">
       <div className="h-12 flex items-center justify-between p-3 transition ">
         <button
-          onClick={() => setChatId(null)}
+          onClick={() => setChatId("")}
           className="flex items-center pl-3 justify-center bg-purple-800/40 hover:pl-2 pr-2 group rounded p-1">
           <CornerDownLeft size={20} />
           <span className="ml-1 group-hover:ml-2">Back</span>
@@ -50,6 +54,15 @@ export function ChatInterface({ projectId, messages, onSendMessage, chatId, setC
         <p className="text-lg font-semibold">Chat</p>
       </div>
       <div className="h-[calc(100vh-3rem)] overflow-y-auto srollbar-none">
+        <div>
+          {
+            (data?.conversation?.messages || []).map((item,index) => (
+              <MessageBubble key={index} message={item} />
+
+            ))
+          }
+        </div>
+
         <ChatPanel events={events} />
       </div>
       <div className="absolute left-0 right-0 bottom-0 h-20 bg-gradient-to-t from-green-500 to-transparent">
