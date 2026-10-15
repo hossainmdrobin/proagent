@@ -45,6 +45,29 @@ export function safePath(input: string): string {
 }
 
 
+async function waitForPreview(
+    url: string,
+    attempts = 15,
+): Promise<boolean> {
+    for (let i = 0; i < attempts; i++) {
+        try {
+            const response = await fetch(url, {
+                signal: AbortSignal.timeout(2_000),
+            });
+
+            if (response.ok) return true;
+        } catch {
+            // The development server may still be starting.
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 1_000));
+    }
+
+    return false;
+}
+
+
+
 export const coreTools = (sandbox: Sandbox,) => {
     const writeFile = tool(
         async ({ path, content }) => {
@@ -136,6 +159,7 @@ export const coreTools = (sandbox: Sandbox,) => {
     );
 
 
+
     const startPreview = tool(
         async () => {
             const result = await sandbox.runCommand({
@@ -153,11 +177,16 @@ export const coreTools = (sandbox: Sandbox,) => {
                 detached: true,
             });
 
+            const previewUrl = sandbox.domain(3001);
+            const ready = await waitForPreview(previewUrl);
+
             return JSON.stringify({
-                status: "starting",
+                status: ready ? "ready" : "starting",
                 commandId: result.cmdId,
-                previewUrl: sandbox.domain(3001),
-                message: "Preview server started asynchronously. Verify that it becomes ready before opening the URL.",
+                previewUrl,
+                message: ready
+                    ? "Preview server is responding."
+                    : "The server did not respond within 15 seconds. Check the command logs and server configuration.",
             });
         },
         {
@@ -167,6 +196,7 @@ export const coreTools = (sandbox: Sandbox,) => {
             schema: z.object({}),
         },
     );
+
 
     return { writeFile, readFile, runCommand, listFiles, startPreview }
 }
