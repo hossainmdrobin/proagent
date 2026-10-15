@@ -26,17 +26,24 @@ const model = new ChatOpenAI({
 
 
 
-export function createProjectAgent(sandbox: Sandbox) {
-    const { writeFile, readFile, listFiles, runCommand } = coreTools(sandbox)
-    const planner = createPlannerAgent(model, sandbox);
-    const coding = createCodingAgent(model, sandbox);
-    const ui = createUIAgent(model, sandbox);
-    const backend = createBackendAgent(model, sandbox);
-    const testing = createTestingAgent(model, sandbox);
-    const reviewer = createReviewerAgent(model, sandbox);
+export function createProjectAgent(sandbox: Sandbox, projectId: string) {
+    const {
+        writeFile,
+        readFile,
+        listFiles,
+        runCommand,
+        startPreview,
+        getPreviewStatus, } = coreTools(sandbox, projectId)
+    const planner = createPlannerAgent(model, sandbox, projectId);
+    const coding = createCodingAgent(model, sandbox, projectId);
+    const ui = createUIAgent(model, sandbox, projectId);
+    const backend = createBackendAgent(model, sandbox, projectId);
+    const testing = createTestingAgent(model, sandbox, projectId);
+    const reviewer = createReviewerAgent(model, sandbox, projectId);
+    
     return createDeepAgent({
         model,
-        tools: [writeFile, readFile, listFiles, runCommand],
+        tools: [writeFile, readFile, listFiles, runCommand, startPreview, getPreviewStatus,],
         subagents: [
             {
                 name: "planner",
@@ -87,6 +94,9 @@ Rules:
   changes from failed or unverified changes.
 - Delegate planning, implementation, testing, and review to the appropriate subagents when useful.
 - Do not report tests as passed unless their results confirm success.
+- Start the preview server when the user requests a live preview.
+- Check preview status before reporting that the preview is ready.
+- Never claim the preview is running unless readiness is confirmed.
 `,
     });
 }

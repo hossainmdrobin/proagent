@@ -1,3 +1,6 @@
+import "server-only";
+import { connectToDatabase } from "@/lib/db";
+import { Project } from "@/lib/models/Project";
 import type { Sandbox } from "@vercel/sandbox";
 import { tool } from "langchain";
 import path from "node:path";
@@ -68,7 +71,7 @@ async function waitForPreview(
 
 
 
-export const coreTools = (sandbox: Sandbox,) => {
+export const coreTools = (sandbox: Sandbox, projectId: string) => {
     const writeFile = tool(
         async ({ path, content }) => {
             const target = safePath(path);
@@ -160,43 +163,184 @@ export const coreTools = (sandbox: Sandbox,) => {
 
 
 
+
     const startPreview = tool(
         async () => {
-            const result = await sandbox.runCommand({
-                cmd: "npm",
-                args: [
-                    "run",
-                    "dev",
-                    "--",
-                    "--hostname",
-                    "0.0.0.0",
-                    "--port",
-                    "3001",
-                ],
-                cwd: ROOT,
-                detached: true,
-            });
+            await connectToDatabase();
 
             const previewUrl = sandbox.domain(3001);
-            const ready = await waitForPreview(previewUrl);
 
-            return JSON.stringify({
-                status: ready ? "ready" : "starting",
-                commandId: result.cmdId,
-                previewUrl,
-                message: ready
-                    ? "Preview server is responding."
-                    : "The server did not respond within 15 seconds. Check the command logs and server configuration.",
-            });
+            // Reuse an already-running preview.
+            if (await waitForPreview(previewUrl, 1)) {
+                await Project.updateOne(
+                    { _id: projectId },
+                    {
+                        $set: {
+                            previewUrl,
+                            previewStatus: "ready",
+                        },
+                    },
+                );
+
+                return JSON.stringify({
+                    status: "ready",
+                    previewUrl,
+                    message: "The preview server is already responding.",
+                });
+            }
+
+            // Record startup before launching the server.
+            await Project.updateOne(
+                { _id: projectId },
+                {
+                    $set: {
+                        previewUrl,
+                        previewStatus: "starting",
+                    },
+                },
+            );
+
+            try {
+                const result = await sandbox.runCommand({
+                    cmd: "npm",
+                    args: [
+                        "run",
+                        "dev",
+                        "--",
+                        "--hostname",
+                        "0.0.0.0",
+                        "--port",
+                        "3001",
+                    ],
+                    cwd: ROOT,
+                    detached: true,
+                });
+
+                await Project.updateOne(
+                    { _id: projectId },
+                    {
+                        $set: {
+                            previewCommandId: result.cmdId,
+                            previewUrl,
+                            previewStatus: "starting",
+                        },
+                    },
+                );
+
+                const ready = await waitForPreview(previewUrl);
+
+                await Project.updateOne(
+                    { _id: projectId },
+                    {
+                        $set: {
+                            previewStatus: ready ? "ready" : "failed",
+                        },
+                    },
+                );
+
+                return JSON.stringify({
+                    status: ready ? "ready" : "failed",
+                    commandId: result.cmdId,
+                    previewUrl,
+                    message: ready
+                        ? "Preview server is responding."
+                        : "Preview did not respond within 15 seconds. Check server logs.",
+                });
+            } catch (error) {
+                await Project.updateOne(
+                    { _id: projectId },
+                    { $set: { previewStatus: "failed" } },
+                );
+
+                throw error;
+            }
         },
         {
             name: "start_preview_server",
             description:
-                "Start the project's development server in detached mode on port 3001. Use after dependencies are installed and the project has a dev script. Do not start another server if one is already running.",
+                "Start the project's development server in detached mode on port 3001. Reuse an existing responsive preview. Use after dependencies are installed and the project has a dev script.",
             schema: z.object({}),
         },
     );
 
+    const getPreviewStatus = tool(
+        async ({ commandId }) => {
+            await connectToDatabase();
 
-    return { writeFile, readFile, runCommand, listFiles, startPreview }
+            const previewUrl = sandbox.domain(3001);
+
+            try {
+                // First check whether the preview is actually responding.
+                const ready = await waitForPreview(previewUrl, 1);
+
+                if (ready) {
+                    await Project.updateOne(
+                        { _id: projectId },
+                        {
+                            $set: {
+                                previewUrl,
+                                previewCommandId: commandId,
+                                previewStatus: "ready",
+                            },
+                        },
+                    );
+
+                    return JSON.stringify({
+                        status: "ready",
+                        commandId,
+                        previewUrl,
+                        message: "The preview server is responding.",
+                    });
+                }
+
+                // If it is not responding, inspect the command.
+                const command = await sandbox.getCommand(commandId);
+                const exitCode = command.exitCode;
+
+                const status =
+                    exitCode === null
+                        ? "starting"
+                        : exitCode === 0
+                            ? "stopped"
+                            : "failed";
+
+                await Project.updateOne(
+                    { _id: projectId },
+                    {
+                        $set: {
+                            previewUrl,
+                            previewCommandId: commandId,
+                            previewStatus: status,
+                        },
+                    },
+                );
+
+                return JSON.stringify({
+                    status,
+                    commandId,
+                    exitCode,
+                    previewUrl,
+                });
+            } catch (error) {
+                return JSON.stringify({
+                    status: "unknown",
+                    commandId,
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : "Could not inspect the preview.",
+                });
+            }
+        },
+        {
+            name: "get_preview_status",
+            description:
+                "Inspect a previously started preview command using its command ID. Use the ID returned by start_preview_server.",
+            schema: z.object({
+                commandId: z.string().min(1),
+            }),
+        },
+    );
+
+    return { writeFile, readFile, runCommand, listFiles, startPreview, getPreviewStatus }
 }

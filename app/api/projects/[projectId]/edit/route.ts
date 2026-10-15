@@ -97,7 +97,7 @@ export async function POST(
     console.log('CREATING PROJECT AGENT')
 
     // 5. Invoke your existing coding agent.
-    const agent = createProjectAgent(sandbox);
+    const agent = createProjectAgent(sandbox, projectId);
     console.log('STREAMING');
 
     const history = conversation.messages.map(

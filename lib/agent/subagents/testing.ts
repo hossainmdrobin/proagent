@@ -3,8 +3,8 @@ import type { Sandbox } from "@vercel/sandbox";
 import { createDeepAgent } from "deepagents";
 import { coreTools } from "../tools";
 
-export function createTestingAgent(model: any, sandbox: Sandbox) {
-    const { writeFile, readFile, listFiles, runCommand } = coreTools(sandbox)
+export function createTestingAgent(model: any, sandbox: Sandbox, projectId:string) {
+    const { writeFile, readFile, listFiles, runCommand } = coreTools(sandbox, projectId)
 
     return createDeepAgent({
         model,
