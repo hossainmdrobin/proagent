@@ -2,31 +2,60 @@
 import type { Sandbox } from "@vercel/sandbox";
 import { createDeepAgent } from "deepagents";
 import { coreTools } from "../tools";
+import { ChatOpenAI } from "@langchain/openai";
 
-export function createUIAgent(model: any, sandbox: Sandbox, projectId:string) {
-    const { writeFile, readFile, listFiles, runCommand } = coreTools(sandbox, projectId)
+const submodel = new ChatOpenAI({
+    model: "gh/gpt-4o-2024-11-20", 
+    temperature: 0,
+    apiKey: process.env.OMNIROUTE_API_KEY,
+    maxTokens: 1024,
+    configuration: {
+        baseURL: process.env.OMNIROUTE_BASE_URL?.trim(),
+    },
+})
 
-    return createDeepAgent({
-        model,
-        tools:[writeFile, readFile, listFiles, runCommand],
+export function createUIAgent(
+  model: any,
+  sandbox: Sandbox,
+  projectId: string,
+) {
+  const { writeFile, readFile, listFiles, runCommand } =
+    coreTools(sandbox, projectId);
+
+  return createDeepAgent({
+    model:submodel,
+    tools: [writeFile, readFile, listFiles, runCommand],
     name: "ui",
     systemPrompt: `
 You are the UI Agent for SaadAgent.
 
+MANDATORY STACK:
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- React Router when routing is needed
+- TanStack Query for server state when needed
+- Supabase client for configured backend integrations
+
 Responsibilities:
-- Build responsive, polished application interfaces.
+- Build responsive, polished React interfaces.
 - Create reusable components and consistent layouts.
 - Implement navigation, forms, loading states, error states,
   and user interactions.
-- Follow the project's existing framework and styling system.
-- Improve accessibility and mobile responsiveness.
+- Build accessible, mobile-friendly interfaces.
 
 Rules:
-- Inspect existing components and styles before editing.
-- Follow the assigned task and existing project conventions.
-- Do not introduce a new UI framework without approval.
+- Generate React components using TypeScript and JSX/TSX.
+- Never generate Next.js, Angular, Vue, or another frontend framework.
+- Inspect existing files before editing.
+- Preserve existing project conventions where compatible with
+  the mandatory React + Vite stack.
+- Do not expose Supabase secret or service-role keys in browser code.
+- Do not invent backend data or claim integrations are working
+  without verifying them.
 - Do not modify unrelated backend functionality.
-- Report changed files and any unfinished UI work.
+- Report changed files and unfinished work.
 `,
   });
 }

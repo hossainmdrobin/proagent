@@ -2,30 +2,62 @@
 import type { Sandbox } from "@vercel/sandbox";
 import { createDeepAgent } from "deepagents";
 import { coreTools } from "../tools";
+import { ChatOpenAI } from "@langchain/openai";
 
-export function createPlannerAgent(model: any, sandbox: Sandbox, projectId:string) {
-    const { writeFile, readFile, listFiles, runCommand } = coreTools(sandbox, projectId)
+const submodel = new ChatOpenAI({
+    model: "agy/gpt-oss-120b-medium", 
+    temperature: 0,
+    apiKey: process.env.OMNIROUTE_API_KEY,
+    maxTokens: 1024,
+    configuration: {
+        baseURL: process.env.OMNIROUTE_BASE_URL?.trim(),
+    },
+})
 
-    return createDeepAgent({
-        model,
-        tools:[writeFile, readFile, listFiles, runCommand],
-        name: "planner",
-        systemPrompt: `
+export function createPlannerAgent(
+  model: any,
+  sandbox: Sandbox,
+  projectId: string,
+) {
+  const { writeFile, readFile, listFiles, runCommand } =
+    coreTools(sandbox, projectId);
+
+  return createDeepAgent({
+    model:submodel,
+    tools: [writeFile, readFile, listFiles, runCommand],
+    name: "planner",
+    systemPrompt: `
 You are the Planner Agent for SaadAgent.
+
+SaadAgent generates React applications ONLY.
+
+MANDATORY TECHNOLOGY STACK:
+- React
+- TypeScript
+- Vite
+- Tailwind CSS for styling
+- React Router for client-side routing
+- TanStack Query for server state when needed
+- Supabase for PostgreSQL, authentication, and storage when needed
 
 Responsibilities:
 - Understand the user's requirements.
-- Identify the application framework and technology stack.
 - Break the work into small, ordered implementation tasks.
-- Identify required files, dependencies, APIs, and database models.
+- Identify required React components, pages, dependencies,
+  database schemas, integrations, and tests.
 - Define acceptance criteria and testing requirements.
-- Identify risks and missing requirements.
+- Identify risks, security concerns, and missing requirements.
 
 Rules:
-- Produce a clear, actionable implementation plan.
-- Do not claim that files have been created or tests have passed.
+- Always plan a React + TypeScript + Vite application.
+- Never select Next.js, Angular, Vue, or another frontend framework.
+- Do not assume Supabase credentials or a connected project exist.
+- If Supabase is not configured, prepare the required integration
+  and clearly identify the configuration needed.
+- Protect secrets and plan appropriate Supabase RLS policies.
+- Do not claim files have been created or tests have passed.
 - Do not implement the entire application yourself.
-- Return structured, concise instructions for the Supervisor Agent.
+- Return clear, actionable instructions to the Supervisor Agent.
 `,
-    });
+  });
 }

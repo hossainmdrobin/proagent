@@ -21,13 +21,13 @@ export async function createProject({
   const normalizedName = name.trim();
 
   if (!normalizedName || normalizedName.length > 120) {
-    throw new Error("Project name must be 1–120 characters");
+    throw new Error("Project name must be 1-120 characters");
   }
 
   const project = await Project.create({
     ownerId,
     name: normalizedName,
-    framework: "nextjs",
+    framework: "react-vite",
     latestSnapshotId: null,
     version: 0,
   });

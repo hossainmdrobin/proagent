@@ -29,7 +29,7 @@ export default function DashboardPage() {
   const [createProject, { data, isLoading }] = useCreateProjectMutation();
   console.log(data)
   useEffect(() => {
-    if (data) redirect(`/pronects/${data._id}`)
+    if (data) redirect(`/projects/${data._id}`)
   }, [data])
 
 

@@ -207,7 +207,7 @@ export const coreTools = (sandbox: Sandbox, projectId: string) => {
                         "run",
                         "dev",
                         "--",
-                        "--hostname",
+                        "--host",
                         "0.0.0.0",
                         "--port",
                         "3001",

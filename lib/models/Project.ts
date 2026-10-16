@@ -29,7 +29,7 @@ const ProjectSchema = new Schema<ProjectRecord>(
     },
     framework: {
       type: String,
-      default: "nextjs",
+      default: "react-vite",
       required: true,
     },
     latestSnapshotId: {
