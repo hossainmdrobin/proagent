@@ -13,9 +13,10 @@ import { validateProject } from "@/lib/workspace/validate-project";
 import { Conversation } from "@/lib/models/Conversaion";
 import { connectToDatabase } from "@/lib/db";
 import type { ConversationMessage } from "@/lib/models/Conversaion";
+import { initializeViteProject } from "@/lib/workspace/initialize-vite-project";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 type RouteContext = {
   params: Promise<{ projectId: string }>;
@@ -95,6 +96,29 @@ export async function POST(
 
     const restored = await restoreSandboxWorkspace({ sandbox, projectId, ownerId: user.id, });
     console.log('CREATING PROJECT AGENT')
+
+    let expectedVersion = restored.version;
+
+    // Initialize only a new project with no saved files.
+    if (
+      restored.version === 0 &&
+      restored.restoredFileCount === 0
+    ) {
+      console.log("INITIALIZING NEW VITE PROJECT");
+
+      await initializeViteProject(sandbox);
+
+      const starterSaved = await persistSandboxWorkspace({
+        sandbox,
+        projectId,
+        ownerId: user.id,
+        expectedVersion,
+      });
+
+      expectedVersion = starterSaved.version;
+
+      console.log("VITE STARTER SAVED:", starterSaved);
+    }
 
     // 5. Invoke your existing coding agent.
     const agent = createProjectAgent(sandbox, projectId);
@@ -221,7 +245,7 @@ export async function POST(
             sandbox: sandbox!,
             projectId,
             ownerId: user.id,
-            expectedVersion: restored.version,
+            expectedVersion,
           });
 
           console.log("SANDBOX PERSISTED:", saved);
@@ -280,13 +304,4 @@ export async function POST(
       { status: 500 },
     );
   }
-  // finally {
-  //   if (sandbox) {
-  //     try {
-  //       await sandbox.stop();
-  //     } catch (error) {
-  //       console.error("[Sandbox Cleanup]", error);
-  //     }
-  //   }
-  // }
 }
