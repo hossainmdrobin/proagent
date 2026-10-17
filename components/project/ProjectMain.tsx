@@ -5,7 +5,6 @@ import { FileTree } from "./FileTree";
 import type { ProjectFile, ViewMode } from "./types";
 import { useGetProjectByIdQuery, useGetProjectFilesQuery } from "@/store/features/projects-api";
 import { Plus, Save, X, Trash2, File as FileIcon } from "lucide-react";
-import { useEffect } from "react";
 
 interface ProjectMainProps {
   viewMode: ViewMode;
@@ -62,89 +61,7 @@ export function ProjectMain({
 
   const {
     data: projectData,
-    refetch: refetchProject,
   } = useGetProjectByIdQuery({ projectId });
-
-  
-
-useEffect(() => {
-  if (!projectId) return;
-
-  let cancelled = false;
-  let timer: ReturnType<typeof setTimeout> | undefined;
-
-  async function checkPreview() {
-    try {
-      const response = await fetch(
-        `/api/projects/${projectId}/preview`,
-        { method: "POST" },
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to start preview");
-      }
-
-      if (cancelled) return;
-
-      if (result.status === "ready") {
-        await refetchProject();
-        return;
-      }
-
-      await pollStatus();
-    } catch (error) {
-      console.error("Preview startup failed:", error);
-    }
-  }
-
-  async function pollStatus() {
-    if (cancelled) return;
-
-    try {
-      const response = await fetch(
-        `/api/projects/${projectId}/preview/status`,
-        { cache: "no-store" },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to check preview status");
-      }
-
-      const result = await response.json();
-
-      if (cancelled) return;
-
-      if (result.status === "ready") {
-        await refetchProject();
-        return;
-      }
-
-      if (result.status === "failed" || result.status === "stopped") {
-        console.error("Preview status:", result.status);
-        return;
-      }
-    } catch (error) {
-      console.error("Preview status check failed:", error);
-    }
-
-    if (!cancelled) {
-      timer = setTimeout(pollStatus, 2000);
-    }
-  }
-
-  void checkPreview();
-
-  return () => {
-    cancelled = true;
-    if (timer) clearTimeout(timer);
-  };
-}, [projectId, refetchProject]);
-
-
-
-
   return (
     <main className="glass-main">
       <div className="flex items-center justify-between mx-4 h-12">

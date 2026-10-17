@@ -11,8 +11,6 @@ import {
   useUpdateProjectFileMutation,
   useDeleteProjectFileMutation,
 } from "@/store/features/projects-api";
-import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Save } from "lucide-react";
 
 export default function ProjectPage() {
   const params = useParams();
