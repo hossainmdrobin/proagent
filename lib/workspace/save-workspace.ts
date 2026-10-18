@@ -147,7 +147,7 @@ export async function saveWorkspace({
         },
         $inc: { version: 1 },
       },
-      { returnDocument: 'after' },
+      { new: true }, // Fixed: Mongoose standard option for returning the updated document
     ).lean();
 
     if (!updatedProject) {
@@ -164,8 +164,7 @@ export async function saveWorkspace({
       totalBytes: validated.totalBytes,
     };
   } catch (error) {
-    // Compensate for partial writes. No MongoDB transaction
-    // is required for this cleanup strategy.
+    // Compensate for partial writes using Promise.allSettled
     await Promise.allSettled([
       ProjectFile.deleteMany({
         snapshotId: snapshot._id,

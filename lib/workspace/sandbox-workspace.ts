@@ -5,8 +5,7 @@ import type { Sandbox } from "@daytona/sdk";
 import type { WorkspaceFile } from "./save-workspace";
 import { saveWorkspace } from "./save-workspace";
 import { restoreWorkspace } from "./restore-workspace";
-import { ROOT } from "../sandbox/create-sandbox";
-import { Daytona } from "@daytona/sdk";
+import { ROOT } from "../agent/tools";
 
 const IGNORED_DIRECTORIES = new Set([
   "node_modules",
@@ -39,42 +38,36 @@ export async function collectSandboxFiles(
   const files: WorkspaceFile[] = [];
 
   async function walk(directory: string, relative = ""): Promise<void> {
-    const entries = await sandbox.fs.listFiles(directory, { depth: 3 });
+    // List immediate children of the directory
+    const entries = await sandbox.fs.listFiles(directory);
 
     for (const entry of entries) {
-      // if (entry.isSymbolicLink()) continue;
-
       const relativePath = relative
         ? `${relative}/${entry.name}`
         : entry.name;
 
-      if (
-        entry.isDir &&
-        IGNORED_DIRECTORIES.has(entry.name)
-      ) {
+      // Skip ignored directories
+      if (entry.isDir && IGNORED_DIRECTORIES.has(entry.name)) {
         continue;
       }
 
       const absolutePath = `${directory}/${entry.name}`;
 
       if (entry.isDir) {
+        // Recursively walk into subdirectories
         await walk(absolutePath, relativePath);
-        continue;
-      }
-
-      if (!entry.isDir) continue;
-
-      // const result = await sandbox.fs.getFileDetails(absolutePath);
-      const result = await sandbox.process.executeCommand(`cat ${absolutePath}`, ROOT)
-
-      // Binary assets will be handled by object storage later.
-      if (result.exitCode === 0) {
-        files.push({
-          path: relativePath,
-          content: result.result,
-        });
       } else {
-        console.error('Failed to read file:', result.result);
+        // It's a file, read its content
+        const result = await sandbox.process.executeCommand(`cat "${absolutePath}"`, ROOT);
+
+        if (result.exitCode === 0) {
+          files.push({
+            path: relativePath,
+            content: result.result,
+          });
+        } else {
+          console.error(`Failed to read file ${absolutePath}:`, result.result);
+        }
       }
     }
   }

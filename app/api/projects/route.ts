@@ -2,6 +2,7 @@ import { getCurrentUser, requireUser } from '@/lib/auth/session';
 import { Project } from '@/lib/models/Project';
 import { NextResponse } from "next/server";
 import { createProject } from "@/lib/workspace/create-project";
+import { Daytona } from '@daytona/sdk';
 
 
 export const runtime = "nodejs";
@@ -25,6 +26,7 @@ export async function GET() {
     }
 }
 
+// CREATING FRESH PROJECT.
 export async function POST(request: Request) {
     const body = await request.json();
     const user = await getCurrentUser()
