@@ -9,7 +9,8 @@ import type { Sandbox } from "@daytona/sdk";
 // import { createBackendAgent } from "./subagents/backend";
 // import { createTestingAgent } from "./subagents/testing";
 // import { createReviewerAgent } from "./subagents/reviewer";
-import { coreTools, ROOT } from "./tools";
+import { coreTools } from "./tools";
+import { ROOT } from "../sandbox/create-sandbox";
 
 
 const model = new ChatOpenAI({

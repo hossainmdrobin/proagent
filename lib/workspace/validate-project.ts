@@ -1,12 +1,14 @@
-
 import "server-only";
 
-import { createSandbox } from "@/lib/sandbox/create-sandbox";
+// [DAYTONA CHANGE]: Import the official Sandbox type from the Daytona SDK instead of the Vercel helper
+import { Sandbox } from "@daytona/sdk";
+import { ROOT } from "../sandbox/create-sandbox";
 
-const PROJECT_ROOT = "/vercel/sandbox/project";
+// [DAYTONA CHANGE]: Updated project root path from Vercel's path to Daytona's writable workspace path
 const MAX_LOG_LENGTH = 8_000;
 
-type SandboxInstance = Awaited<ReturnType<typeof createSandbox>>;
+// [DAYTONA CHANGE]: Type alias updated to use Daytona's Sandbox class
+type SandboxInstance = Sandbox;
 
 export interface ProjectCheck {
     name: string;
@@ -34,21 +36,20 @@ async function runCheck(
     args: string[],
 ): Promise<ProjectCheck> {
     try {
-        const result = await sandbox.runCommand({
-            cmd,
-            args,
-            cwd: PROJECT_ROOT,
-        });
+        // [DAYTONA CHANGE]: Combine command and args into a single string 
+        // and use Daytona's `sandbox.process.executeCommand(fullCommand, cwd)`
+        const fullCommand = [cmd, ...args].join(" ");
+        const result = await sandbox.process.executeCommand(fullCommand, ROOT);
 
-        const stdout = truncate(await result.stdout());
-        const stderr = truncate(await result.stderr());
+        // [DAYTONA CHANGE]: Daytona returns combined output in `result.result` 
+        // instead of separate async `.stdout()` and `.stderr()` stream methods.
+        const output = truncate(result.result || "");
 
         return {
             name,
             status: result.exitCode === 0 ? "passed" : "failed",
             exitCode: result.exitCode,
-            stdout,
-            stderr,
+            stdout: output, // Daytona combines stdout/stderr in result.result
         };
     } catch (error) {
         return {
@@ -67,10 +68,10 @@ export async function validateProject(
 ): Promise<ProjectValidationResult> {
     const checks: ProjectCheck[] = [];
 
-    const entries = await sandbox.fs.readdir(PROJECT_ROOT, {
-        withFileTypes: true,
-    });
+    // [DAYTONA CHANGE]: Replaced Vercel's `sandbox.fs.readdir` with Daytona's `sandbox.fs.listFiles`
+    const entries = await sandbox.fs.listFiles(ROOT);
 
+    // Daytona's listFiles returns objects with `.name` and `.isDir` properties
     const rootFiles = new Set(entries.map((entry) => entry.name));
 
     if (!rootFiles.has("package.json")) {
@@ -86,10 +87,27 @@ export async function validateProject(
         };
     }
 
-    const packageJsonText = await sandbox.fs.readFile(
-        `${PROJECT_ROOT}/package.json`,
-        "utf8",
+    // [DAYTONA CHANGE]: Replaced Vercel's `sandbox.fs.readFile` with a robust `cat` execution via Daytona process 
+    // to reliably fetch text file content across all SDK versions.
+    const packageJsonResult = await sandbox.process.executeCommand(
+        `cat "${ROOT}/package.json"`,
+        ROOT
     );
+
+    if (packageJsonResult.exitCode !== 0) {
+        return {
+            passed: false,
+            checks: [
+                {
+                    name: "package.json",
+                    status: "failed",
+                    stderr: "Failed to read package.json content.",
+                },
+            ],
+        };
+    }
+
+    const packageJsonText = packageJsonResult.result;
 
     const packageJson: {
         scripts?: Record<string, string>;

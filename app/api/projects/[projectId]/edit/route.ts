@@ -3,13 +3,13 @@ import { NextResponse } from "next/server";
 import { createProjectAgent } from "@/lib/agent/create-agent";
 import { createSandbox } from "@/lib/sandbox/create-sandbox";
 import {
-  // persistSandboxWorkspace,
+  persistSandboxWorkspace,
   restoreSandboxWorkspace,
 } from "@/lib/workspace/sandbox-workspace";
 import { getCurrentUser } from "@/lib/auth/session";
 import { AgentEvent } from "@/lib/agent/events";
 import { AIMessage, BaseMessage } from "@langchain/core/messages";
-// import { validateProject } from "@/lib/workspace/validate-project";
+import { validateProject } from "@/lib/workspace/validate-project";
 import { Conversation } from "@/lib/models/Conversaion";
 import { connectToDatabase } from "@/lib/db";
 import type { ConversationMessage } from "@/lib/models/Conversaion";
@@ -89,13 +89,7 @@ export async function POST(
 
     // 3. Create a fresh, isolated sandbox.
     sandbox = await createSandbox(projectId);    // CREATE SANDBOX
-    const publicUrl = sandbox.getSignedPreviewUrl(3001);
-    console.log("CREATED PUBLUC URL:", publicUrl);
-    console.log('RESTORING THE PROJECT')
-
-    const restored = await restoreSandboxWorkspace({ sandbox, projectId, ownerId: user.id, });
-    console.log('CREATING PROJECT AGENT')
-
+    await sandbox.start();
 
     // 5. Invoke your existing coding agent.
     const agent = createProjectAgent(sandbox, projectId);
@@ -194,35 +188,35 @@ export async function POST(
           controller.enqueue(
             encode({ type: "message", content: "Validating project..." }),
           );
-          // const validationStartedAt = Date.now();
+          const validationStartedAt = Date.now();
 
-          // const validation = await validateProject(sandbox!);
-          // console.log(
-          //   "VALIDATION DURATION (seconds):",
-          //   ((Date.now() - validationStartedAt) / 1000).toFixed(1),
-          // );
+          const validation = await validateProject(sandbox!);
+          console.log(
+            "VALIDATION DURATION (seconds):",
+            ((Date.now() - validationStartedAt) / 1000).toFixed(1),
+          );
 
-          // if (!validation.passed) {
-          //   controller.enqueue(
-          //     encode({
-          //       type: "error",
-          //       message: "Project validation failed. The snapshot was not saved.",
-          //     }),
-          //   );
+          if (!validation.passed) {
+            controller.enqueue(
+              encode({
+                type: "error",
+                message: "Project validation failed. The snapshot was not saved.",
+              }),
+            );
 
-          //   controller.close();
-          //   return;
-          // }
+            controller.close();
+            return;
+          }
 
           // 2. Persist only after validation succeeds.
-          // console.log("PERSISTING THE SANDBOX");
+          console.log("PERSISTING THE SANDBOX");
 
-          // const saved = await persistSandboxWorkspace({
-          //   sandbox: sandbox!,
-          //   projectId,
-          //   ownerId: user.id,
-          //   expectedVersion,
-          // });
+          const saved = await persistSandboxWorkspace({
+            sandbox: sandbox!,
+            projectId,
+            ownerId: user.id,
+            expectedVersion: 3
+          });
 
           // console.log("SANDBOX PERSISTED:", saved);
 
