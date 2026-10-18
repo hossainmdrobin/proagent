@@ -26,7 +26,7 @@ export const sandboxApi = baseApi.injectEndpoints({
     }),
     stopSandbox: build.mutation<{url:string},{projectId:string}>({
       query: ({projectId}) => ({
-        url: `/projects/${projectId}/start`,  // \projects\[projectId]\stop\route.ts
+        url: `/projects/${projectId}/stop`,  // \projects\[projectId]\stop\route.ts
         method: "POST",
         body:{projectId}
       }),

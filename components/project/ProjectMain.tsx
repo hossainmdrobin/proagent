@@ -66,6 +66,7 @@ export function ProjectMain({
   const [startPreview, { data: previewData, isLoading: previewLoading, error: previewerror }] = useStartSandboxMutation()
   const [stopPreview, { data: stopData, isLoading: stopIsLoading, error: stopError }] = useStopSandboxMutation();
   console.log("preview error", previewData, previewerror)
+  const started = sandboxData?.state == 'started'
   return (
     <main className="glass-main">
       <div className="flex items-center justify-between mx-4 h-12">
@@ -83,7 +84,9 @@ export function ProjectMain({
           </Button>
           <h2 className="text-lg font-semibold">UI Preview</h2>
         </div>
-        {previewData && <Button size="sm" variant="danger"><Power size={20} /> Stop Preview</Button>}
+        {sandboxData?.state == "started" && <Button
+          onClick={() => stopPreview({ projectId })}
+          size="sm" variant="danger"><Power size={20} /> Stop Preview</Button>}
         <div className="flex items-center gap-2">
           <Button
             variant={viewMode === "preview" ? "primary" : "ghost"}
@@ -105,13 +108,13 @@ export function ProjectMain({
       <div className="flex-1 h-[calc(100vh-3.1rem)] overflow-hidden border border-glass-border bg-zinc-950/50 relative">
         {viewMode === "preview" ? (
           <div className="w-full h-full flex items-center justify-center">
-            {previewData && <iframe
-              src={previewData.url || ""}
+            {started && <iframe
+              src={previewData?.url || ""}
               className="w-full h-full border border-zinc-800 bg-white"
               sandbox="allow-scripts allow-same-origin allow-forms"
               title="Project Preview"
             />}
-            {!previewData && !previewLoading && <Button onClick={() => startPreview({ projectId })} variant="secondary"> <Power size={20} />Start Project</Button>}
+            {!started && !previewLoading && <Button onClick={() => startPreview({ projectId })} variant="secondary"> <Power size={20} />Start Project</Button>}
             {previewLoading && <Button>Loading...</Button>}
           </div>
         ) : (
