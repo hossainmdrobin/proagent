@@ -68,7 +68,15 @@ export const apiBaseQuery: BaseQueryFn<
 export const baseApi = createApi({
   reducerPath: "api",
   baseQuery: apiBaseQuery,
-  tagTypes: ["Agent", "Session","FILE_CREATE", "FILE_UPDATE","FILE_DELETE", "CONVERSATION"],
+  tagTypes: [
+    "Agent",
+    "Session",
+    "FILE_CREATE",
+    "FILE_UPDATE",
+    "FILE_DELETE",
+    "CONVERSATION",
+    "SANDBOX"
+  ],
   endpoints: () => ({}),
 });
 

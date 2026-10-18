@@ -13,6 +13,7 @@ export const sandboxApi = baseApi.injectEndpoints({
         url: `/projects/${projectId}/start`,
         method: "GET",
       }),
+      providesTags:["SANDBOX"],
     }),
     
     startSandbox: build.mutation<{url:string},{projectId:string}>({
@@ -20,14 +21,16 @@ export const sandboxApi = baseApi.injectEndpoints({
         url: `/projects/${projectId}/start`,  // \projects\[projectId]\start\route.ts
         method: "POST",
         body:{projectId}
-      })
+      }),
+      invalidatesTags:["SANDBOX"],
     }),
     stopSandbox: build.mutation<{url:string},{projectId:string}>({
       query: ({projectId}) => ({
         url: `/projects/${projectId}/start`,  // \projects\[projectId]\stop\route.ts
         method: "POST",
         body:{projectId}
-      })
+      }),
+      invalidatesTags:['SANDBOX']
     }),
 
   }),
