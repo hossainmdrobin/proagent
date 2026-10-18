@@ -244,7 +244,7 @@ export async function POST(
           if (result.matchedCount !== 1) {
             throw new Error("Conversation was not found during message persistence");
           }
-
+          await sandbox?.stop()
           // 4. Mark completion only after persistence succeeds.
           controller.enqueue(encode({ type: "done" }));
           controller.close();

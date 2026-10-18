@@ -1,30 +1,28 @@
 
-import type { Sandbox } from "@vercel/sandbox";
+import type { Sandbox } from "@daytona/sdk";
 import { createDeepAgent } from "deepagents";
 import { coreTools } from "../tools";
 import { ChatOpenAI } from "@langchain/openai";
 
 const submodel = new ChatOpenAI({
-    model: "agy/gpt-oss-120b-medium", 
-    temperature: 0,
-    apiKey: process.env.OMNIROUTE_API_KEY,
-    maxTokens: 1024,
-    configuration: {
-        baseURL: process.env.OMNIROUTE_BASE_URL?.trim(),
-    },
+  model: "agy/gpt-oss-120b-medium",
+  temperature: 0,
+  apiKey: process.env.OMNIROUTE_API_KEY,
+  maxTokens: 1024,
+  configuration: {
+    baseURL: process.env.OMNIROUTE_BASE_URL?.trim(),
+  },
 })
 
 export function createPlannerAgent(
-  model: any,
   sandbox: Sandbox,
   projectId: string,
 ) {
-  const { writeFile, readFile, listFiles, runCommand } =
-    coreTools(sandbox, projectId);
+  const { readFile, listFiles, runCommand } = coreTools(sandbox, projectId);
 
   return createDeepAgent({
-    model:submodel,
-    tools: [writeFile, readFile, listFiles, runCommand],
+    model: submodel,
+    tools: [readFile, listFiles, runCommand],
     name: "planner",
     systemPrompt: `
 You are the Planner Agent for SaadAgent.

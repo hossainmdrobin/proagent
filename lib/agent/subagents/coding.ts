@@ -1,11 +1,11 @@
 
 import { createDeepAgent } from "deepagents";
 import { coreTools } from "../tools";
-import type { Sandbox } from "@vercel/sandbox";
+import type { Sandbox } from "@daytona/sdk";
 import { ChatOpenAI } from "@langchain/openai";
 
 const submodel = new ChatOpenAI({
-    model: "cl/x-ai/grok-4.5", 
+    model: "cl/x-ai/grok-4.5",
     temperature: 0,
     apiKey: process.env.OMNIROUTE_API_KEY,
     maxTokens: 1024,
@@ -14,11 +14,11 @@ const submodel = new ChatOpenAI({
     },
 })
 
-export function createCodingAgent(model: any, sandbox: Sandbox, projectId: string) {
+export function createCodingAgent(sandbox: Sandbox, projectId: string) {
     const { writeFile, readFile, listFiles, runCommand } = coreTools(sandbox, projectId)
 
     return createDeepAgent({
-        model:submodel,
+        model: submodel,
         tools: [writeFile, readFile, listFiles, runCommand],
         name: "coding",
         systemPrompt: `

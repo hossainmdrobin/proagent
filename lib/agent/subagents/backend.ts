@@ -1,12 +1,12 @@
 
 import { createDeepAgent } from "deepagents";
 import { coreTools } from "../tools";
-import type { Sandbox } from "@vercel/sandbox";
+import type { Sandbox } from "@daytona/sdk";
 
 import { ChatOpenAI } from "@langchain/openai";
 
 const model = new ChatOpenAI({
-    model: "agy/gemini-3.1-flash-image", 
+    model: "agy/gemini-3.1-flash-image",
     temperature: 0,
     apiKey: process.env.OMNIROUTE_API_KEY,
     maxTokens: 1024,
@@ -15,7 +15,7 @@ const model = new ChatOpenAI({
     },
 })
 
-export function createBackendAgent(model: any, sandbox: Sandbox, projectId: string) {
+export function createBackendAgent(sandbox: Sandbox, projectId: string) {
     const { writeFile, readFile, listFiles, runCommand } = coreTools(sandbox, projectId)
     return createDeepAgent({
         model,

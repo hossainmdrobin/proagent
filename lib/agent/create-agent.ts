@@ -3,12 +3,12 @@ import { ChatOpenAI } from "@langchain/openai";
 import { createDeepAgent } from "deepagents";
 import type { Sandbox } from "@daytona/sdk";
 
-// import { createPlannerAgent } from "./subagents/planner";
-// import { createCodingAgent } from "./subagents/coding";
-// import { createUIAgent } from "./subagents/ui";
-// import { createBackendAgent } from "./subagents/backend";
-// import { createTestingAgent } from "./subagents/testing";
-// import { createReviewerAgent } from "./subagents/reviewer";
+import { createPlannerAgent } from "./subagents/planner";
+import { createCodingAgent } from "./subagents/coding";
+import { createUIAgent } from "./subagents/ui";
+import { createBackendAgent } from "./subagents/backend";
+import { createTestingAgent } from "./subagents/testing";
+import { createReviewerAgent } from "./subagents/reviewer";
 import { coreTools } from "./tools";
 import { ROOT } from "../sandbox/create-sandbox";
 
@@ -34,48 +34,48 @@ export function createProjectAgent(sandbox: Sandbox, projectId: string) {
         // startPreview,
         // getPreviewStatus, 
     } = coreTools(sandbox, projectId)
-    // const planner = createPlannerAgent(model, sandbox, projectId);
-    // const coding = createCodingAgent(model, sandbox, projectId);
-    // const ui = createUIAgent(model, sandbox, projectId);
-    // const backend = createBackendAgent(model, sandbox, projectId);
-    // const testing = createTestingAgent(model, sandbox, projectId);
-    // const reviewer = createReviewerAgent(model, sandbox, projectId);
+    const planner = createPlannerAgent(sandbox, projectId);
+    const coding = createCodingAgent(sandbox, projectId);
+    const ui = createUIAgent(sandbox, projectId);
+    const backend = createBackendAgent(sandbox, projectId);
+    const testing = createTestingAgent(sandbox, projectId);
+    const reviewer = createReviewerAgent(sandbox, projectId);
 
     return createDeepAgent({
         model,
         tools: [writeFile, readFile, listFiles, runCommand],
-        // subagents: [
-        //     {
-        //         name: "planner",
-        //         description: "Plans application architecture, requirements, and implementation tasks.",
-        //         runnable: planner,
-        //     },
-        //     {
-        //         name: "coding",
-        //         description: "Implements features and edits application source files.",
-        //         runnable: coding,
-        //     },
-        //     {
-        //         name: "ui",
-        //         description: "Builds responsive frontend interfaces and reusable components.",
-        //         runnable: ui,
-        //     },
-        //     {
-        //         name: "backend",
-        //         description: "Implements APIs, database operations, authentication, and server logic.",
-        //         runnable: backend,
-        //     },
-        //     {
-        //         name: "testing",
-        //         description: "Runs available tests and builds, diagnoses failures, and reports results.",
-        //         runnable: testing,
-        //     },
-        //     {
-        //         name: "reviewer",
-        //         description: "Reviews code quality, security, regressions, and implementation completeness.",
-        //         runnable: reviewer,
-        //     },
-        // ],
+        subagents: [
+            {
+                name: "planner",
+                description: "Plans application architecture, requirements, and implementation tasks.",
+                runnable: planner,
+            },
+            {
+                name: "coding",
+                description: "Implements features and edits application source files.",
+                runnable: coding,
+            },
+            {
+                name: "ui",
+                description: "Builds responsive frontend interfaces and reusable components.",
+                runnable: ui,
+            },
+            {
+                name: "backend",
+                description: "Implements APIs, database operations, authentication, and server logic.",
+                runnable: backend,
+            },
+            {
+                name: "testing",
+                description: "Runs available tests and builds, diagnoses failures, and reports results.",
+                runnable: testing,
+            },
+            {
+                name: "reviewer",
+                description: "Reviews code quality, security, regressions, and implementation completeness.",
+                runnable: reviewer,
+            },
+        ],
         systemPrompt: `
 You are SaadAgent, an AI coding agent that builds functional applications.
 

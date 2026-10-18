@@ -1,21 +1,20 @@
 
-import type { Sandbox } from "@vercel/sandbox";
+import type { Sandbox } from "@daytona/sdk";
 import { createDeepAgent } from "deepagents";
 import { coreTools } from "../tools";
 import { ChatOpenAI } from "@langchain/openai";
 
 const submodel = new ChatOpenAI({
-    model: "gh/gpt-4o-2024-11-20", 
-    temperature: 0,
-    apiKey: process.env.OMNIROUTE_API_KEY,
-    maxTokens: 1024,
-    configuration: {
-        baseURL: process.env.OMNIROUTE_BASE_URL?.trim(),
-    },
+  model: "gh/gpt-4o-2024-11-20",
+  temperature: 0,
+  apiKey: process.env.OMNIROUTE_API_KEY,
+  maxTokens: 1024,
+  configuration: {
+    baseURL: process.env.OMNIROUTE_BASE_URL?.trim(),
+  },
 })
 
 export function createUIAgent(
-  model: any,
   sandbox: Sandbox,
   projectId: string,
 ) {
@@ -23,7 +22,7 @@ export function createUIAgent(
     coreTools(sandbox, projectId);
 
   return createDeepAgent({
-    model:submodel,
+    model: submodel,
     tools: [writeFile, readFile, listFiles, runCommand],
     name: "ui",
     systemPrompt: `
