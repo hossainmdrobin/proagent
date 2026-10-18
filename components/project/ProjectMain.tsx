@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { FileTree } from "./FileTree";
 import type { ProjectFile, ViewMode } from "./types";
 import { useGetProjectByIdQuery, useGetProjectFilesQuery } from "@/store/features/projects-api";
-import { Plus, Save, X, Trash2, File as FileIcon } from "lucide-react";
+import { Plus, Save, X, Trash2, File as FileIcon, Power } from "lucide-react";
+import { useGetSandboxStateQuery, useStartSandboxMutation, useStopSandboxMutation } from "@/store/features/sandbox_action-api";
 
 interface ProjectMainProps {
   viewMode: ViewMode;
@@ -59,9 +60,12 @@ export function ProjectMain({
   const files = data && data.length > 0 ? data : projectFiles;
   const loading = isLoading || queryLoading;
 
-  const {
-    data: projectData,
-  } = useGetProjectByIdQuery({ projectId });
+  const { data: projectData, } = useGetProjectByIdQuery({ projectId });
+  const { data: sandboxData, error: sandboxError, isLoading: sandboxLoading } = useGetSandboxStateQuery({ projectId })
+  console.log("Get sandbox query", sandboxData)
+  const [startPreview, { data: previewData, isLoading: previewLoading, error: previewerror }] = useStartSandboxMutation()
+  const [stopPreview, { data: stopData, isLoading: stopIsLoading, error: stopError }] = useStopSandboxMutation();
+  console.log("preview error", previewData, previewerror)
   return (
     <main className="glass-main">
       <div className="flex items-center justify-between mx-4 h-12">
@@ -79,6 +83,7 @@ export function ProjectMain({
           </Button>
           <h2 className="text-lg font-semibold">UI Preview</h2>
         </div>
+        {previewData && <Button size="sm" variant="danger"><Power size={20} /> Stop Preview</Button>}
         <div className="flex items-center gap-2">
           <Button
             variant={viewMode === "preview" ? "primary" : "ghost"}
@@ -100,12 +105,14 @@ export function ProjectMain({
       <div className="flex-1 h-[calc(100vh-3.1rem)] overflow-hidden border border-glass-border bg-zinc-950/50 relative">
         {viewMode === "preview" ? (
           <div className="w-full h-full flex items-center justify-center">
-            <iframe
-              src={projectData?.previewUrl || ""}
+            {previewData && <iframe
+              src={previewData.url || ""}
               className="w-full h-full border border-zinc-800 bg-white"
               sandbox="allow-scripts allow-same-origin allow-forms"
               title="Project Preview"
-            />
+            />}
+            {!previewData && !previewLoading && <Button onClick={() => startPreview({ projectId })} variant="secondary"> <Power size={20} />Start Project</Button>}
+            {previewLoading && <Button>Loading...</Button>}
           </div>
         ) : (
           <div className="w-full h-full flex">

@@ -1,29 +1,32 @@
 
 import { baseApi } from "@/store/base-api";
 
-
+type SandboxDetail = {
+  state:string,
+  url?:string
+}
 
 export const sandboxApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    // getProjects: build.query<ProjectRecord[], void>({
-    //   query: () => ({
-    //     url: "/projects",
-    //     method: "GET",
-    //   }),
-    // }),
+    getSandboxState: build.query<SandboxDetail,{projectId:string}>({
+      query: ({projectId}) => ({
+        url: `/projects/${projectId}/start`,
+        method: "GET",
+      }),
+    }),
     
     startSandbox: build.mutation<{url:string},{projectId:string}>({
       query: ({projectId}) => ({
         url: `/projects/${projectId}/start`,  // \projects\[projectId]\start\route.ts
         method: "POST",
-        body:{}
+        body:{projectId}
       })
     }),
     stopSandbox: build.mutation<{url:string},{projectId:string}>({
       query: ({projectId}) => ({
         url: `/projects/${projectId}/start`,  // \projects\[projectId]\stop\route.ts
         method: "POST",
-        body:{}
+        body:{projectId}
       })
     }),
 
@@ -31,6 +34,7 @@ export const sandboxApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useGetSandboxStateQuery,
   useStartSandboxMutation,
   useStopSandboxMutation
 } = sandboxApi;
