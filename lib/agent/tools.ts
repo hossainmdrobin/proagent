@@ -5,8 +5,8 @@ import type { Sandbox } from "@daytona/sdk";
 import { tool } from "langchain";
 import path from "node:path";
 import { z } from "zod";
+import { ROOT } from "../sandbox/create-sandbox";
 
-export const ROOT = "/vercel/sandbox/project";
 
 export function safePath(input: string): string {
     const value = input.trim();

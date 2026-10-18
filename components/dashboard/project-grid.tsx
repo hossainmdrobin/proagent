@@ -28,7 +28,7 @@ const {data, isLoading, error} = useGetProjectsQuery();
           {data?.map((project, index) => (
             <Link 
             href={`/project/${String(project._id)}`}
-              key={project.name}
+              key={index}
               className={cn(
                 'glass p-4 rounded-xl transition-all duration-300 animate-fade-in',
                 'hover:bg-white/10 hover:border-white/20'
@@ -52,21 +52,21 @@ const {data, isLoading, error} = useGetProjectsQuery();
               <h4 className="font-semibold text-white truncate mb-1">{project.name}</h4>
               {/* <p className="text-sm text-zinc-400 line-clamp-2 mb-3">{project.description}</p> */}
               <div className="flex items-center gap-4 text-xs text-zinc-500">
-                {/* <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1">
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
-                  {project.stars.toLocaleString()}
-                </span> */}
-                {/* <span className="flex items-center gap-1">
+                  {project.version}
+                </span>
+                <span className="flex items-center gap-1">
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
-                  {project.forks.toLocaleString()}
-                </span> */}
+                  {project.framework}
+                </span>
               </div>
               <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
-                {/* <span className="text-xs text-zinc-500 capitalize">{project.language}</span> */}
+                {/* <span className="text-xs text-zinc-500 capitalize">{project.createdAt}</span> */}
                 {/* <span className="text-xs text-zinc-500">{project.lastCommit}</span> */}
               </div>
             </Link>

@@ -5,7 +5,7 @@ import type { Sandbox } from "@daytona/sdk";
 import type { WorkspaceFile } from "./save-workspace";
 import { saveWorkspace } from "./save-workspace";
 import { restoreWorkspace } from "./restore-workspace";
-import { ROOT } from "../agent/tools";
+import { ROOT } from "../sandbox/create-sandbox";
 
 const IGNORED_DIRECTORIES = new Set([
   "node_modules",
@@ -88,8 +88,9 @@ export async function persistSandboxWorkspace({
   ownerId: string;
   expectedVersion: number;
 }) {
+  console.log("COLLECTING SANBOX FILES...");
   const files = await collectSandboxFiles(sandbox);
-
+console.log("SAVING THE WORKSPACE...")
   return saveWorkspace({
     projectId,
     ownerId,

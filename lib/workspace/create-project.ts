@@ -5,8 +5,8 @@ import mongoose from "mongoose";
 import { Project } from "@/lib/models/Project";
 import { connectToDatabase } from "../db";
 import { Daytona } from "@daytona/sdk";
-import { ROOT } from "../agent/tools";
 import { persistSandboxWorkspace } from "./sandbox-workspace";
+import { ROOT } from "../sandbox/create-sandbox";
 
 export async function createProject({
   ownerId,
