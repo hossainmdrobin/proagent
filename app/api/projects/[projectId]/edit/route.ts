@@ -3,17 +3,16 @@ import { NextResponse } from "next/server";
 import { createProjectAgent } from "@/lib/agent/create-agent";
 import { createSandbox } from "@/lib/sandbox/create-sandbox";
 import {
-  persistSandboxWorkspace,
+  // persistSandboxWorkspace,
   restoreSandboxWorkspace,
 } from "@/lib/workspace/sandbox-workspace";
 import { getCurrentUser } from "@/lib/auth/session";
 import { AgentEvent } from "@/lib/agent/events";
 import { AIMessage, BaseMessage } from "@langchain/core/messages";
-import { validateProject } from "@/lib/workspace/validate-project";
+// import { validateProject } from "@/lib/workspace/validate-project";
 import { Conversation } from "@/lib/models/Conversaion";
 import { connectToDatabase } from "@/lib/db";
 import type { ConversationMessage } from "@/lib/models/Conversaion";
-import { initializeViteProject } from "@/lib/workspace/initialize-vite-project";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -97,28 +96,18 @@ export async function POST(
     const restored = await restoreSandboxWorkspace({ sandbox, projectId, ownerId: user.id, });
     console.log('CREATING PROJECT AGENT')
 
-    let expectedVersion = restored.version;
 
-    // Initialize only a new project with no saved files.
-    if (
-      restored.version === 0 &&
-      restored.restoredFileCount === 0
-    ) {
-      console.log("INITIALIZING NEW VITE PROJECT");
+    //   const starterSaved = await persistSandboxWorkspace({
+    //     sandbox,
+    //     projectId,
+    //     ownerId: user.id,
+    //     expectedVersion,
+    //   });
 
-      await initializeViteProject(sandbox);
+    //   expectedVersion = starterSaved.version;
 
-      const starterSaved = await persistSandboxWorkspace({
-        sandbox,
-        projectId,
-        ownerId: user.id,
-        expectedVersion,
-      });
-
-      expectedVersion = starterSaved.version;
-
-      console.log("VITE STARTER SAVED:", starterSaved);
-    }
+    //   console.log("VITE STARTER SAVED:", starterSaved);
+    // }
 
     // 5. Invoke your existing coding agent.
     const agent = createProjectAgent(sandbox, projectId);
@@ -147,7 +136,6 @@ export async function POST(
           thread_id: `project-${projectId}-chat-${body.conversationId}`,
         }
       });
-
 
     // THE ASSISTANT MESSAGE VARIABLE
     let assistantResponse = "";
@@ -218,37 +206,37 @@ export async function POST(
           controller.enqueue(
             encode({ type: "message", content: "Validating project..." }),
           );
-          const validationStartedAt = Date.now();
+          // const validationStartedAt = Date.now();
 
-          const validation = await validateProject(sandbox!);
-          console.log(
-            "VALIDATION DURATION (seconds):",
-            ((Date.now() - validationStartedAt) / 1000).toFixed(1),
-          );
+          // const validation = await validateProject(sandbox!);
+          // console.log(
+          //   "VALIDATION DURATION (seconds):",
+          //   ((Date.now() - validationStartedAt) / 1000).toFixed(1),
+          // );
 
-          if (!validation.passed) {
-            controller.enqueue(
-              encode({
-                type: "error",
-                message: "Project validation failed. The snapshot was not saved.",
-              }),
-            );
+          // if (!validation.passed) {
+          //   controller.enqueue(
+          //     encode({
+          //       type: "error",
+          //       message: "Project validation failed. The snapshot was not saved.",
+          //     }),
+          //   );
 
-            controller.close();
-            return;
-          }
+          //   controller.close();
+          //   return;
+          // }
 
           // 2. Persist only after validation succeeds.
-          console.log("PERSISTING THE SANDBOX");
+          // console.log("PERSISTING THE SANDBOX");
 
-          const saved = await persistSandboxWorkspace({
-            sandbox: sandbox!,
-            projectId,
-            ownerId: user.id,
-            expectedVersion,
-          });
+          // const saved = await persistSandboxWorkspace({
+          //   sandbox: sandbox!,
+          //   projectId,
+          //   ownerId: user.id,
+          //   expectedVersion,
+          // });
 
-          console.log("SANDBOX PERSISTED:", saved);
+          // console.log("SANDBOX PERSISTED:", saved);
 
           // 3. Save the assistant response to MongoDB.
           const result = await Conversation.updateOne(
