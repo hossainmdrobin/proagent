@@ -97,18 +97,6 @@ export async function POST(
     console.log('CREATING PROJECT AGENT')
 
 
-    //   const starterSaved = await persistSandboxWorkspace({
-    //     sandbox,
-    //     projectId,
-    //     ownerId: user.id,
-    //     expectedVersion,
-    //   });
-
-    //   expectedVersion = starterSaved.version;
-
-    //   console.log("VITE STARTER SAVED:", starterSaved);
-    // }
-
     // 5. Invoke your existing coding agent.
     const agent = createProjectAgent(sandbox, projectId);
     console.log('STREAMING');

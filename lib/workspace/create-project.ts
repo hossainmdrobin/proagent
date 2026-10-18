@@ -48,9 +48,10 @@ export async function createProject({
 
   console.log('Cloning repository...');
   await newSandbox.git.clone('https://github.com/hossainmdrobin/proagent_init.git', ROOT);
-
+  console.log('Installing dependencies...');
+  await newSandbox.process.executeCommand('npm install', ROOT);
   console.log("SAVING TO DATABASE")
-  await persistSandboxWorkspace({sandbox:newSandbox,ownerId,projectId:project._id,expectedVersion:0})
+  await persistSandboxWorkspace({ sandbox: newSandbox, ownerId, projectId: project._id, expectedVersion: 0 })
 
   return {
     id: project._id.toString(),
