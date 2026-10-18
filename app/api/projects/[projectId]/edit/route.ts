@@ -89,8 +89,8 @@ export async function POST(
 
 
     // 3. Create a fresh, isolated sandbox.
-    sandbox = await createSandbox(projectId);
-    const publicUrl = sandbox.domain(3001);
+    sandbox = await createSandbox(projectId);    // CREATE SANDBOX
+    const publicUrl = sandbox.getSignedPreviewUrl(3001);
     console.log("CREATED PUBLUC URL:", publicUrl);
     console.log('RESTORING THE PROJECT')
 

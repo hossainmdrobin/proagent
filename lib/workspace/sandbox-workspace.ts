@@ -1,12 +1,12 @@
 
 import "server-only";
 
-import type { Sandbox } from "@vercel/sandbox";
+import type { Sandbox } from "@daytona/sdk";
 import type { WorkspaceFile } from "./save-workspace";
 import { saveWorkspace } from "./save-workspace";
 import { restoreWorkspace } from "./restore-workspace";
-
-const ROOT = "/vercel/sandbox/project";
+import { ROOT } from "../sandbox/create-sandbox";
+import { Daytona } from "@daytona/sdk";
 
 const IGNORED_DIRECTORIES = new Set([
   "node_modules",
@@ -39,19 +39,17 @@ export async function collectSandboxFiles(
   const files: WorkspaceFile[] = [];
 
   async function walk(directory: string, relative = ""): Promise<void> {
-    const entries = await sandbox.fs.readdir(directory, {
-      withFileTypes: true,
-    });
+    const entries = await sandbox.fs.listFiles(directory, { depth: 3 });
 
     for (const entry of entries) {
-      if (entry.isSymbolicLink()) continue;
+      // if (entry.isSymbolicLink()) continue;
 
       const relativePath = relative
         ? `${relative}/${entry.name}`
         : entry.name;
 
       if (
-        entry.isDirectory() &&
+        entry.isDir &&
         IGNORED_DIRECTORIES.has(entry.name)
       ) {
         continue;
@@ -59,22 +57,25 @@ export async function collectSandboxFiles(
 
       const absolutePath = `${directory}/${entry.name}`;
 
-      if (entry.isDirectory()) {
+      if (entry.isDir) {
         await walk(absolutePath, relativePath);
         continue;
       }
 
-      if (!entry.isFile()) continue;
+      if (!entry.isDir) continue;
 
-      const buffer = await sandbox.fs.readFile(absolutePath);
+      // const result = await sandbox.fs.getFileDetails(absolutePath);
+      const result = await sandbox.process.executeCommand(`cat ${absolutePath}`, ROOT)
 
       // Binary assets will be handled by object storage later.
-      if (buffer.includes(0)) continue;
-
-      files.push({
-        path: relativePath,
-        content: buffer.toString("utf8"),
-      });
+      if (result.exitCode === 0) {
+        files.push({
+          path: relativePath,
+          content: result.result,
+        });
+      } else {
+        console.error('Failed to read file:', result.result);
+      }
     }
   }
 
@@ -121,14 +122,14 @@ export async function restoreSandboxWorkspace({
     version,
   });
 
-  await sandbox.fs.mkdir(ROOT, { recursive: true });
+  await sandbox.fs.createFolder(ROOT, "777");
 
   for (const file of workspace.files) {
     const target = resolveProjectPath(file.path);
     const parent = target.slice(0, target.lastIndexOf("/"));
 
-    await sandbox.fs.mkdir(parent, { recursive: true });
-    await sandbox.fs.writeFile(target, file.content);
+    await sandbox.fs.createFolder(parent, "777");
+    await sandbox.fs.uploadFile(Buffer.from(file.content, 'utf-8'), target);
   }
 
   return {

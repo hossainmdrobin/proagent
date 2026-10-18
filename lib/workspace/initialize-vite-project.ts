@@ -1,7 +1,7 @@
 
 import "server-only";
 
-import type { Sandbox } from "@vercel/sandbox";
+import type { Sandbox } from "@daytona/sdk";
 
 const ROOT = "/vercel/sandbox/project";
 

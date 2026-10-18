@@ -1,7 +1,7 @@
 import "server-only";
 import { ChatOpenAI } from "@langchain/openai";
 import { createDeepAgent } from "deepagents";
-import type { Sandbox } from "@vercel/sandbox";
+import type { Sandbox } from "@daytona/sdk";
 
 
 

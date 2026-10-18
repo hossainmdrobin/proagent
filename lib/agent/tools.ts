@@ -1,7 +1,7 @@
 import "server-only";
 import { connectToDatabase } from "@/lib/db";
 import { Project } from "@/lib/models/Project";
-import type { Sandbox } from "@vercel/sandbox";
+import type { Sandbox } from "@daytona/sdk";
 import { tool } from "langchain";
 import path from "node:path";
 import { z } from "zod";
@@ -76,12 +76,12 @@ export const coreTools = (sandbox: Sandbox, projectId: string) => {
         async ({ path, content }) => {
             const target = safePath(path);
 
-            await sandbox.fs.mkdir(
+            await sandbox.fs.createFolder(
                 target.substring(0, target.lastIndexOf("/")),
-                { recursive: true },
+                "777",
             );
-
-            await sandbox.fs.writeFile(target, content);
+            const fileContent = Buffer.from(content)
+            await sandbox.fs.uploadFile( fileContent,target);
 
             return `File written: ${path}`;
         },
@@ -97,12 +97,9 @@ export const coreTools = (sandbox: Sandbox, projectId: string) => {
 
     const readFile = tool(
         async ({ path }) => {
-            const content = await sandbox.fs.readFile(
-                safePath(path),
-                "utf8",
-            );
+            const content = await sandbox.fs.downloadFile(safePath(path));
 
-            return String(content).slice(0, 20_000);
+            return content.toString().slice(0,2000)
         },
         {
             name: "read_project_file",
@@ -115,13 +112,9 @@ export const coreTools = (sandbox: Sandbox, projectId: string) => {
 
     const listFiles = tool(
         async ({ path }) => {
-            const result = await sandbox.runCommand({
-                cmd: "ls",
-                args: ["-la", safePath(path)],
-                cwd: ROOT,
-            });
+            const result = await sandbox.fs.listFiles(path,{depth:4});
 
-            return (await result.stdout()).slice(0, 10_000);
+            return (await result).slice(0, 10_000);
         },
         {
             name: "list_project_files",
