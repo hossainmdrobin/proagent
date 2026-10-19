@@ -76,9 +76,25 @@ export const coreTools = (sandbox: Sandbox, projectId: string) => {
 
     const readFile = tool(
         async ({ path }) => {
-            const content = await sandbox.fs.downloadFile(safePath(path));
+            try {
+                // Optional: check file details or existence first if needed, 
+                // otherwise let downloadFile fetch it.
+                const content = await sandbox.fs.downloadFile(safePath(path));
 
-            return content.toString().slice(0, 2000)
+                // Convert buffer/Uint8Array to string safely
+                const text = Buffer.isBuffer(content)
+                    ? content.toString("utf-8")
+                    : Buffer.from(content).toString("utf-8");
+
+                if (text.length > 2000) {
+                    return text.slice(0, 2000);
+                }
+
+                return text;
+            } catch (error: any) {
+                // Return the error message to the agent so it can self-correct
+                return `Error reading file: ${error.message || error}`;
+            }
         },
         {
             name: "read_project_file",

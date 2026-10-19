@@ -4,7 +4,6 @@ import { createProjectAgent } from "@/lib/agent/create-agent";
 import { createSandbox } from "@/lib/sandbox/create-sandbox";
 import {
   persistSandboxWorkspace,
-  restoreSandboxWorkspace,
 } from "@/lib/workspace/sandbox-workspace";
 import { getCurrentUser } from "@/lib/auth/session";
 import { AgentEvent } from "@/lib/agent/events";
@@ -235,9 +234,7 @@ export async function POST(
                   createdAt: new Date(),
                 },
               },
-              $set: {
-                updatedAt: new Date(),
-              },
+              $set: {updatedAt: new Date()},
             },
           );
 
