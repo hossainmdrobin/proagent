@@ -12,6 +12,7 @@ import { validateProject } from "@/lib/workspace/validate-project";
 import { Conversation } from "@/lib/models/Conversaion";
 import { connectToDatabase } from "@/lib/db";
 import type { ConversationMessage } from "@/lib/models/Conversaion";
+import { Project } from "@/lib/models/Project";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -70,6 +71,21 @@ export async function POST(
       projectId,
       ownerId: user.id,
     });
+    const project = await Project.findOne({
+      _id: projectId,
+      ownerId: user.id,
+    })
+      .select({ version: 1 })
+      .lean();
+
+    if (!project) {
+      return NextResponse.json(
+        { error: "Project not found" },
+        { status: 404 },
+      );
+    }
+
+    const expectedVersion = project.version;
 
     if (!conversation) {
       return NextResponse.json(
@@ -214,7 +230,7 @@ export async function POST(
             sandbox: sandbox!,
             projectId,
             ownerId: user.id,
-            expectedVersion: 3
+            expectedVersion
           });
 
           // console.log("SANDBOX PERSISTED:", saved);
@@ -234,7 +250,7 @@ export async function POST(
                   createdAt: new Date(),
                 },
               },
-              $set: {updatedAt: new Date()},
+              $set: { updatedAt: new Date() },
             },
           );
 

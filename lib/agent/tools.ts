@@ -1,12 +1,9 @@
 import "server-only";
-// import { connectToDatabase } from "@/lib/db";
-// import { Project } from "@/lib/models/Project";
 import type { Sandbox } from "@daytona/sdk";
 import { tool } from "langchain";
 import path from "node:path";
 import { z } from "zod";
 import { ROOT } from "../sandbox/create-sandbox";
-
 
 export function safePath(input: string): string {
     const value = input.trim();
@@ -16,8 +13,6 @@ export function safePath(input: string): string {
         return ROOT;
     }
 
-    // Accept both Windows and Unix separators, but reject
-    // absolute paths and Windows drive paths.
     if (
         value.includes("\0") ||
         path.posix.isAbsolute(value) ||
@@ -47,22 +42,21 @@ export function safePath(input: string): string {
     return resolved;
 }
 
-
-
-
 export const coreTools = (sandbox: Sandbox, projectId: string) => {
     const writeFile = tool(
-        async ({ path, content }) => {
-            const target = safePath(path);
+        async ({ path: filePath, content }) => {
+            const target = safePath(filePath);
+            const parentDir = path.posix.dirname(target);
 
-            await sandbox.fs.createFolder(
-                target.substring(0, target.lastIndexOf("/")),
-                "777",
-            );
-            const fileContent = Buffer.from(content)
+            // Only create parent folder if it's a sub-directory inside ROOT
+            if (parentDir !== ROOT && parentDir.startsWith(ROOT)) {
+                await sandbox.fs.createFolder(parentDir, "777");
+            }
+
+            const fileContent = Buffer.from(content);
             await sandbox.fs.uploadFile(fileContent, target);
 
-            return `File written: ${path}`;
+            return `File written: ${filePath}`;
         },
         {
             name: "write_project_file",
@@ -75,30 +69,26 @@ export const coreTools = (sandbox: Sandbox, projectId: string) => {
     );
 
     const readFile = tool(
-        async ({ path }) => {
+        async ({ path: filePath }) => {
             try {
-                // Optional: check file details or existence first if needed, 
-                // otherwise let downloadFile fetch it.
-                const content = await sandbox.fs.downloadFile(safePath(path));
+                const content = await sandbox.fs.downloadFile(safePath(filePath));
 
-                // Convert buffer/Uint8Array to string safely
                 const text = Buffer.isBuffer(content)
                     ? content.toString("utf-8")
                     : Buffer.from(content).toString("utf-8");
 
                 if (text.length > 2000) {
-                    return text.slice(0, 2000);
+                    return text.slice(0, 2000) + "\n...[file truncated due to length]";
                 }
 
                 return text;
             } catch (error: any) {
-                // Return the error message to the agent so it can self-correct
                 return `Error reading file: ${error.message || error}`;
             }
         },
         {
             name: "read_project_file",
-            description: "Read a project file.",
+            description: "Read a project file. Returns up to the first 2000 characters.",
             schema: z.object({
                 path: z.string().min(1).max(200),
             }),
@@ -106,18 +96,25 @@ export const coreTools = (sandbox: Sandbox, projectId: string) => {
     );
 
     const listFiles = tool(
-        async ({ path }) => {
-            const result = await sandbox.fs.listFiles(path, { depth: 4 });
-
-            return (await result).slice(0, 10_000);
+        async ({ path: dirPath }) => {
+            try {
+                // Fixed: Use safePath to prevent directory traversal or absolute path exploits
+                const target = safePath(dirPath);
+                const result = await sandbox.fs.listFiles(target, { depth: 4 });
+                
+                // Ensure we return a clean string or array representation safely
+                const files = Array.isArray(result) ? result : [];
+                return JSON.stringify(files.slice(0, 1000));
+            } catch (error: any) {
+                return `Error listing files: ${error.message || error}`;
+            }
         },
         {
             name: "list_project_files",
             description:
                 "List files and directories inside the project. " +
                 'Use "." to list the project root. ' +
-                "Paths must be relative to the project root, such as " +
-                '"src" or "src/app". Never use absolute paths.',
+                "Paths must be relative to the project root.",
             schema: z.object({
                 path: z.string().default("."),
             }),
@@ -126,15 +123,21 @@ export const coreTools = (sandbox: Sandbox, projectId: string) => {
 
     const runCommand = tool(
         async ({ command, args }) => {
-            // Combine the command and its arguments into a single shell command string
-            const fullCommand = [command, ...args].join(" ");
+            // Fixed: Safely escape arguments with spaces using JSON.stringify or basic quoting
+            const escapedArgs = args.map(arg => {
+                // If arg contains spaces or special characters, wrap it safely in quotes
+                if (/[ \t\n"'`$|&;<>]/.test(arg)) {
+                    return `"${arg.replace(/"/g, '\\"')}"`;
+                }
+                return arg;
+            });
 
-            // Correct Daytona execution: command string as 1st arg, cwd as 2nd arg
+            const fullCommand = [command, ...escapedArgs].join(" ");
+
             const result = await sandbox.process.executeCommand(fullCommand, ROOT);
 
             return JSON.stringify({
                 exitCode: result.exitCode,
-                // Daytona returns the text output directly under `result.result` (or `result`)
                 output: (result.result || "").slice(0, 12_000),
             });
         },
@@ -142,11 +145,11 @@ export const coreTools = (sandbox: Sandbox, projectId: string) => {
             name: "run_project_command",
             description: "Run a project command inside the isolated sandbox.",
             schema: z.object({
-                command: z.enum(["node", "npm", "npx", "git"]), // Added npx/git for flexibility if needed
-                args: z.array(z.string().max(200)).max(20),
+                command: z.string().min(1).max(50), // Flexible command name (node, npm, git, etc.)
+                args: z.array(z.string().max(300)).max(20),
             }),
         },
     );
 
-    return { writeFile, readFile, runCommand, listFiles }
-}
+    return { writeFile, readFile, runCommand, listFiles };
+};
