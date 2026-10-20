@@ -148,6 +148,30 @@ export async function POST(
             if (chunk.model_request) {
               const messages = chunk.model_request.messages;
 
+
+              const update = chunk as {
+                messages?: Array<{
+                  type?: string;
+                  content?: unknown;
+                  name?: string;
+                  tool_calls?: unknown;
+                  toolCalls?: unknown;
+                }>;
+              };
+
+              if (Array.isArray(update.messages)) {
+                for (const message of update.messages) {
+                  console.log("[Agent message diagnostic]", {
+                    type: message.type,
+                    name: message.name,
+                    contentType: typeof message.content,
+                    contentIsArray: Array.isArray(message.content),
+                    content: message.content,
+                  });
+                }
+              }
+
+
               console.log(
                 "MODEL UPDATE:",
                 messages.map((message) => ({
@@ -263,6 +287,13 @@ export async function POST(
           controller.close();
 
         } catch (error) {
+
+          console.error("[SaadAgent error]", error);
+          console.error(
+            "[SaadAgent stack]",
+            error instanceof Error ? error.stack : String(error),
+          );
+
           controller.enqueue(encode({
             type: "error",
             message: error instanceof Error ? error.message : "Unknown agent error"

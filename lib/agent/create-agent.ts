@@ -1,5 +1,5 @@
 import "server-only";
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatOllama } from "@langchain/ollama";
 import { createDeepAgent } from "deepagents";
 import type { Sandbox } from "@daytona/sdk";
 
@@ -11,16 +11,55 @@ import { createTestingAgent } from "./subagents/testing";
 import { createReviewerAgent } from "./subagents/reviewer";
 import { coreTools } from "./tools";
 import { ROOT } from "../sandbox/create-sandbox";
+import { ToolMessage } from "@langchain/core/messages";
+import { createMiddleware } from "langchain";
 
+const normalizeOllamaToolMessages = createMiddleware({
+    name: "NormalizeOllamaToolMessages",
 
-const model = new ChatOpenAI({
-    model: "agy/claude-sonnet-4-6",
-    temperature: 0,
-    apiKey: process.env.OMNIROUTE_API_KEY,
-    maxTokens: 1024,
-    configuration: {
-        baseURL: process.env.OMNIROUTE_BASE_URL?.trim(),
+    wrapModelCall: async (request, handler) => {
+        const messages = request.messages.map((message) => {
+            if (
+                message instanceof ToolMessage &&
+                typeof message.content !== "string"
+            ) {
+                console.error("[SaadAgent] Normalizing tool message", {
+                    name: message.name,
+                    toolCallId: message.tool_call_id,
+                    contentType: typeof message.content,
+                    isArray: Array.isArray(message.content),
+                });
+
+                return new ToolMessage({
+                    content: JSON.stringify(message.content),
+                    tool_call_id: message.tool_call_id,
+                    name: message.name,
+                });
+            }
+
+            return message;
+        });
+
+        return handler({
+            ...request,
+            messages,
+        });
     },
+});
+
+
+// const model = new ChatOpenAI({
+//     model: "agy/gemini-3.8-flash-tiered",
+//     temperature: 0,
+//     // apiKey: process.env.OMNIROUTE_API_KEY,
+//     maxTokens: 1024,
+//     configuration: {
+//         baseURL: process.env.OMNIROUTE_BASE_URL?.trim(),
+//     },
+// })
+const model = new ChatOllama({
+    model: "qwen3:1.7b",
+    temperature: 0,
 })
 
 
@@ -43,6 +82,7 @@ export function createProjectAgent(sandbox: Sandbox, projectId: string) {
 
     return createDeepAgent({
         model,
+        middleware: [normalizeOllamaToolMessages],
         tools: [writeFile, readFile, listFiles, runCommand],
         subagents: [
             {
@@ -121,6 +161,60 @@ SAFETY AND ACCURACY:
 - Project changes are persisted by the application only after validation
   succeeds. Do not claim persistence before confirmation.
 - Report completed, failed, and unverified work accurately.
+File listing rules:
+- Never enumerate node_modules, .git, .next, dist, build, coverage,
+  or other generated/dependency directories.
+- Start by listing the project root.
+- Inspect package.json and the relevant application source files.
+- Do not print every discovered file in the conversation.
+- Summarize the project structure and show only relevant files.
+- If you need dependency details, inspect package.json instead of node_modules.
+- Use project-relative paths for read_project_file and list_project_files. Use "." to list the workspace root. Never pass absolute paths to these tools.
+
+Project inspection and validation rules:
+
+1. Treat tool results as the source of truth. Never invent files,
+   directories, dependencies, permissions, or project configuration.
+
+2. Before describing the project, inspect package.json and list the
+   application files while excluding node_modules, .git, build outputs,
+   and generated directories.
+
+3. Only describe files that were actually returned by the file tools.
+   Never infer that both .jsx and .tsx files exist unless both were found.
+
+4. Do not recommend installing dependencies or changing configuration
+   without identifying a specific reason from the project files.
+
+5. Before reporting that validation succeeded, run an appropriate
+   validation command, such as npm run build, when possible.
+
+6. Report validation accurately:
+   - Passed: the command completed successfully.
+   - Failed: include the relevant error.
+   - Not run: explicitly say validation was not performed.
+
+7. Never report "Done" as proof that the application works.
+
+EVIDENCE RULES:
+- File listings prove only which entries the listing tool returned.
+- Never claim file permissions, ownership, dependencies, or file contents
+  unless a tool explicitly returned that information.
+- Read package.json before describing project dependencies or build scripts.
+- Read a source file before explaining its implementation.
+- For validation, call run_project_command with the actual available script.
+- Report the exact command and exit code returned by the tool.
+- If a command returns a nonzero exit code, validation failed.
+- If validation was not run, explicitly say "Not run".
+- Never produce a success status without evidence from a tool result.
+
+When calling run_project_command:
+- The command field must contain only the executable, such as "npm".
+- Put command arguments in the args array.
+- For a build, call command="npm", args=["run", "build"].
+- Never include the arguments in both fields.
+
+
 `,
     });
 }

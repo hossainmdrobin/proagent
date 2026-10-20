@@ -5,14 +5,16 @@ import path from "node:path";
 import { z } from "zod";
 import { ROOT } from "../sandbox/create-sandbox";
 
+
 export function safePath(input: string): string {
     const value = input.trim();
 
-    // An empty path or "." means the project root.
+    // Empty path or "." means the project root.
     if (!value || value === ".") {
         return ROOT;
     }
 
+    // Reject null bytes and absolute paths.
     if (
         value.includes("\0") ||
         path.posix.isAbsolute(value) ||
@@ -21,16 +23,21 @@ export function safePath(input: string): string {
         throw new Error("Invalid project path");
     }
 
+    // Normalize Windows-style separators to forward slashes.
     const normalized = value.replace(/\\/g, "/");
+
+    // Reject attempts to navigate outside the project.
     const segments = normalized.split("/");
 
     if (segments.some((segment) => segment === "..")) {
         throw new Error("Invalid project path");
     }
 
+    // Resolve the path inside the project workspace.
     const resolved = path.posix.resolve(ROOT, normalized);
     const relative = path.posix.relative(ROOT, resolved);
 
+    // Final security check: path must remain inside ROOT.
     if (
         relative === ".." ||
         relative.startsWith("../") ||
@@ -41,6 +48,7 @@ export function safePath(input: string): string {
 
     return resolved;
 }
+
 
 export const coreTools = (sandbox: Sandbox, projectId: string) => {
     const writeFile = tool(
@@ -95,31 +103,79 @@ export const coreTools = (sandbox: Sandbox, projectId: string) => {
         },
     );
 
+
+
     const listFiles = tool(
         async ({ path: dirPath }) => {
             try {
-                // Fixed: Use safePath to prevent directory traversal or absolute path exploits
-                const target = safePath(dirPath);
+                const target =
+                    dirPath.trim().replace(/\\/g, "/") === ROOT
+                        ? ROOT
+                        : safePath(dirPath);
                 const result = await sandbox.fs.listFiles(target, { depth: 4 });
-                
-                // Ensure we return a clean string or array representation safely
-                const files = Array.isArray(result) ? result : [];
-                return JSON.stringify(files.slice(0, 1000));
-            } catch (error: any) {
-                return `Error listing files: ${error.message || error}`;
+
+                if (!Array.isArray(result)) {
+                    return JSON.stringify({
+                        error: "Unexpected response from Daytona listFiles",
+                    });
+                }
+
+                const excludedDirs = new Set([
+                    "node_modules",
+                    ".git",
+                    ".next",
+                    "dist",
+                    "build",
+                    "coverage",
+                    ".turbo",
+                    ".vercel",
+                    ".cache",
+                ]);
+
+                const files: string[] = [];
+
+                for (const entry of result) {
+                    const rawPath = entry.path ?? entry.name;
+
+                    if (typeof rawPath !== "string" || !rawPath.trim()) {
+                        continue;
+                    }
+
+                    const normalized = rawPath.replace(/\\/g, "/");
+                    const segments = normalized.split("/").filter(Boolean);
+
+                    if (segments.some((segment) => excludedDirs.has(segment))) {
+                        continue;
+                    }
+
+                    files.push(normalized);
+                }
+
+                return JSON.stringify({
+                    requestedDirectory: dirPath,
+                    returnedEntries: files.length,
+                    files: files.slice(0, 200),
+                    truncated: files.length > 200,
+                });
+            } catch (error: unknown) {
+                return JSON.stringify({
+                    error: error instanceof Error
+                        ? error.message
+                        : String(error),
+                });
             }
         },
         {
             name: "list_project_files",
             description:
-                "List files and directories inside the project. " +
-                'Use "." to list the project root. ' +
-                "Paths must be relative to the project root.",
+                "List actual project file entries. Returns file paths only, not permissions or ownership. Excludes common dependency and generated directories. Use '.' for the project root. Never infer unreturned files.",
             schema: z.object({
                 path: z.string().default("."),
             }),
         },
     );
+
+
 
     const runCommand = tool(
         async ({ command, args }) => {
@@ -132,7 +188,9 @@ export const coreTools = (sandbox: Sandbox, projectId: string) => {
                 return arg;
             });
 
-            const fullCommand = [command, ...escapedArgs].join(" ");
+            const fullCommand = args.length > 0
+                ? [command, ...escapedArgs].join(" ")
+                : command;
 
             const result = await sandbox.process.executeCommand(fullCommand, ROOT);
 
@@ -145,8 +203,8 @@ export const coreTools = (sandbox: Sandbox, projectId: string) => {
             name: "run_project_command",
             description: "Run a project command inside the isolated sandbox.",
             schema: z.object({
-                command: z.string().min(1).max(50), // Flexible command name (node, npm, git, etc.)
-                args: z.array(z.string().max(300)).max(20),
+                command: z.string().min(1).max(300),
+                args: z.array(z.string().max(300)).max(20).default([]),
             }),
         },
     );
