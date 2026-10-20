@@ -6,6 +6,7 @@ import type { WorkspaceFile } from "./save-workspace";
 import { saveWorkspace } from "./save-workspace";
 import { restoreWorkspace } from "./restore-workspace";
 import { ROOT } from "../sandbox/create-sandbox";
+import { readSandboxFile } from "../sandbox/read-sandbox-file";
 
 const IGNORED_DIRECTORIES = new Set([
   "node_modules",
@@ -57,11 +58,11 @@ export async function collectSandboxFiles(
       }
 
       try {
-        const content = await sandbox.fs.downloadFile(absolutePath);
+        const content = await readSandboxFile(sandbox, absolutePath);
 
         files.push({
           path: relativePath,
-          content: Buffer.from(content).toString("utf-8"),
+          content: content.toString("utf-8"),
         });
       } catch (error) {
         console.error(`Failed to read file ${absolutePath}:`, error);
@@ -87,7 +88,7 @@ export async function persistSandboxWorkspace({
 }) {
   console.log("COLLECTING SANBOX FILES...");
   const files = await collectSandboxFiles(sandbox);
-console.log("SAVING THE WORKSPACE...")
+  console.log("SAVING THE WORKSPACE...")
   return saveWorkspace({
     projectId,
     ownerId,

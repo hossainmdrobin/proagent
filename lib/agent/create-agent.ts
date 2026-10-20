@@ -1,5 +1,5 @@
 import "server-only";
-import { ChatOllama } from "@langchain/ollama";
+// import { ChatOllama } from "@langchain/ollama";
 import { createDeepAgent } from "deepagents";
 import type { Sandbox } from "@daytona/sdk";
 import { coreTools } from "./tools";
@@ -7,6 +7,7 @@ import { ROOT } from "../sandbox/create-sandbox";
 import { ToolMessage } from "@langchain/core/messages";
 import { createMiddleware } from "langchain";
 import { DaytonaBackend } from "./daytona-backend";
+import { ChatOpenAI } from "@langchain/openai";
 
 const normalizeOllamaToolMessages = createMiddleware({
     name: "NormalizeOllamaToolMessages",
@@ -42,19 +43,19 @@ const normalizeOllamaToolMessages = createMiddleware({
 });
 
 
-// const model = new ChatOpenAI({
-//     model: "agy/gemini-3.8-flash-tiered",
-//     temperature: 0,
-//     // apiKey: process.env.OMNIROUTE_API_KEY,
-//     maxTokens: 1024,
-//     configuration: {
-//         baseURL: process.env.OMNIROUTE_BASE_URL?.trim(),
-//     },
-// })
-const model = new ChatOllama({
-    model: "qwen3:1.7b",
+const model = new ChatOpenAI({
+    model: "agy/gemini-3.8-flash-tiered",
     temperature: 0,
+    apiKey: process.env.OMNIROUTE_API_KEY,
+    maxTokens: 1024,
+    configuration: {
+        baseURL: process.env.OMNIROUTE_BASE_URL?.trim(),
+    },
 })
+// const model = new ChatOllama({
+//     model: "qwen3:1.7b",
+//     temperature: 0,
+// })
 
 
 

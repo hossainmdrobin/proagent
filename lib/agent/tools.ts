@@ -4,6 +4,7 @@ import { tool } from "langchain";
 import path from "node:path";
 import { z } from "zod";
 import { ROOT } from "../sandbox/create-sandbox";
+import { readSandboxFile } from "../sandbox/read-sandbox-file";
 
 
 export function safePath(input: string): string {
@@ -77,28 +78,37 @@ export const coreTools = (sandbox: Sandbox, projectId: string) => {
     );
 
     const readFile = tool(
-        async ({ path: filePath }) => {
+        async ({ path, file_path }) => {
+            const requestedPath = path ?? file_path;
+
+            if (!requestedPath) {
+                return "Error reading file: provide path or file_path.";
+            }
+
             try {
-                const content = await sandbox.fs.downloadFile(safePath(filePath));
+                const content = await readSandboxFile(
+                    sandbox,
+                    safePath(requestedPath),
+                );
 
-                const text = Buffer.isBuffer(content)
-                    ? content.toString("utf-8")
-                    : Buffer.from(content).toString("utf-8");
+                const text = content.toString("utf-8");
 
-                if (text.length > 2000) {
-                    return text.slice(0, 2000) + "\n...[file truncated due to length]";
-                }
-
-                return text;
-            } catch (error: any) {
-                return `Error reading file: ${error.message || error}`;
+                return text.length > 2000
+                    ? text.slice(0, 2000) +
+                    "\n...[file truncated due to length]"
+                    : text;
+            } catch (error: unknown) {
+                return `Error reading file: ${error instanceof Error ? error.message : String(error)
+                    }`;
             }
         },
         {
             name: "read_project_file",
-            description: "Read a project file. Returns up to the first 2000 characters.",
+            description:
+                "Read a project file. Accepts either path or file_path. Example: {\"file_path\":\"package.json\"}. Returns up to the first 2000 characters.",
             schema: z.object({
-                path: z.string().min(1).max(200),
+                path: z.string().min(1).max(200).optional(),
+                file_path: z.string().min(1).max(200).optional(),
             }),
         },
     );
