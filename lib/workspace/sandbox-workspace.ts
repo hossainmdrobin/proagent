@@ -38,7 +38,6 @@ export async function collectSandboxFiles(
   const files: WorkspaceFile[] = [];
 
   async function walk(directory: string, relative = ""): Promise<void> {
-    // List immediate children of the directory
     const entries = await sandbox.fs.listFiles(directory);
 
     for (const entry of entries) {
@@ -46,7 +45,6 @@ export async function collectSandboxFiles(
         ? `${relative}/${entry.name}`
         : entry.name;
 
-      // Skip ignored directories
       if (entry.isDir && IGNORED_DIRECTORIES.has(entry.name)) {
         continue;
       }
@@ -54,20 +52,19 @@ export async function collectSandboxFiles(
       const absolutePath = `${directory}/${entry.name}`;
 
       if (entry.isDir) {
-        // Recursively walk into subdirectories
         await walk(absolutePath, relativePath);
-      } else {
-        // It's a file, read its content
-        const result = await sandbox.process.executeCommand(`cat "${absolutePath}"`, ROOT);
+        continue;
+      }
 
-        if (result.exitCode === 0) {
-          files.push({
-            path: relativePath,
-            content: result.result,
-          });
-        } else {
-          console.error(`Failed to read file ${absolutePath}:`, result.result);
-        }
+      try {
+        const content = await sandbox.fs.downloadFile(absolutePath);
+
+        files.push({
+          path: relativePath,
+          content: Buffer.from(content).toString("utf-8"),
+        });
+      } catch (error) {
+        console.error(`Failed to read file ${absolutePath}:`, error);
       }
     }
   }
