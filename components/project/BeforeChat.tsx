@@ -16,29 +16,29 @@ export function BeforeChat({ setChatId, projectId }: { setChatId: (id: string) =
     <>
       <div className="p-3">
         <div className="mt-4 text-gray-400">
+          <div className="w-full flex flex-col items- mt-8">
+            <button
+              onClick={() => createChat({ projectId })}
+              className="p-3 bg-gray-500/50 rounded mt-3">Start New Conversation</button>
+          </div>
           <h2 className="text-gray-400">Continue with History</h2>
-          {
-            data?.conversations?.map((item) => (
-              <ChatTab setChatId={setChatId} key={item.id} chat={item} />
-            ))
-          }
+          <div className="h-[calc(100vh-8.5rem)] overflow-y-auto scrollbar-none">
+            {
+              data?.conversations?.map((item) => (
+                <ChatTab setChatId={setChatId} key={item.id} chat={item} />
+              ))
+            }
+          </div>
 
-          <div className="pl-4 text-sm">
+
+          {data?.conversations?.length==0 &&<div className="pl-4 text-sm">
             <ul className="list-disc">
               <li>Give me some task or not. Just order me what to do and Get it done</li>
               <li>Save your valuable time with me</li>
             </ul>
-          </div>
+          </div>}
         </div>
-        <div className="w-full flex flex-col justify-center items-center mt-8">
-          <span className="">- - Or - -</span>
-          <button
-            onClick={() => createChat({ projectId })}
-            className="p-3 bg-gray-500/50 rounded mt-3">Start New Conversation</button>
-        </div>
-
       </div>
-
     </>
   );
 }
